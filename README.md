@@ -1,2 +1,2 @@
 # qLDPCsim
-quantum LDPC code simulator 
+A toy (for the moment ;) ) quantum LDPC code simulator. 
