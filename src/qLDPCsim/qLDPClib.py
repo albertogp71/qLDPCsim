@@ -3,12 +3,16 @@
 """
 Predefined quantum CSS codes via parity-check matrix pairs (Hx, Hz).
 
-- Shor (9-qubit) code
-- Steane (7-qubit) code
-- QC-LDPC lifted codes from [1].
+- Shor (9-qubit) code [1]
+- Steane (7-qubit) code [2]
+- Laflamme (5-qubit) code [3]
+- QC-LDPC lifted codes from [4].
 
 REFERENCES
-[1] Quantum 6, 767 (2022).
+[1] Phys. Rev. A 52, R2493(R). https://doi.org/10.1103%2FPhysRevA.52.R2493.
+[2] https://doi.org/10.1098/rspa.1996.0136.
+[3] 
+[4] Quantum 6, 767 (2022).
 """
 
 import numpy as np
@@ -84,6 +88,28 @@ def steane_code() -> Tuple[np.ndarray, np.ndarray]:
     # In the usual CSS form, Hx checks Z errors, Hz checks X errors:
     Hx = H.copy()
     Hz = H.copy()
+    return Hx, Hz
+
+
+def five_qubit_code() -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Returns (Hx, Hz) for the 5-qubit perfect code.
+    Hx, Hz have shape (4,5).
+    """
+    Hx = np.array([
+        [1, 0, 0, 1, 0],  # g1 X positions
+        [0, 1, 0, 0, 1],  # g2
+        [1, 0, 1, 0, 0],  # g3
+        [0, 1, 0, 1, 0],  # g4
+    ], dtype=int)
+
+    Hz = np.array([
+        [0, 1, 1, 0, 0],  # g1 Z positions
+        [0, 0, 1, 1, 0],  # g2
+        [0, 0, 0, 1, 1],  # g3
+        [1, 0, 0, 0, 1],  # g4
+    ], dtype=int)
+
     return Hx, Hz
 
 
