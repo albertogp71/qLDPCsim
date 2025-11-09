@@ -1,6 +1,5 @@
-exec(open('yourpackage/version.py').read())
+exec(open('qLDPCsim/version.py').read())
 setup(
-    name='yourpackage',
+    name='qLDPCsim',
     version=__version__,
-    # other setup parameters
 )

@@ -1,7 +1,7 @@
-# qLDPClib.py
+# PCMlibrary.py
 
 """
-Predefined quantum CSS codes via parity-check matrix pairs (Hx, Hz).
+Library of Parity Check Matricx (PCM) pairs (Hx, Hz) of quantum CSS codes.
 
 - Shor (9-qubit) code [1]
 - Steane (7-qubit) code [2]
@@ -11,7 +11,7 @@ Predefined quantum CSS codes via parity-check matrix pairs (Hx, Hz).
 REFERENCES
 [1] Phys. Rev. A 52, R2493(R). https://doi.org/10.1103%2FPhysRevA.52.R2493.
 [2] https://doi.org/10.1098/rspa.1996.0136.
-[3] 
+[3] https://arxiv.org/abs/quant-ph/9602019
 [4] Quantum 6, 767 (2022).
 """
 
@@ -24,20 +24,6 @@ def shor_code() -> Tuple[np.ndarray, np.ndarray]:
     The Shor code is constructed by concatenating three 3-qubit repetition codes
     in both Z and X bases.
     """
-    # The Shor code is often described as:
-    # - Three blocks of 3 qubits; within each block, there is a Z-type repetition code to detect bit-flips,
-    # - Then an X-type repetition code across the three blocks to detect phase-flips.
-    #
-    # One common representation:
-    # For bit-flip (Z checks) we have 3 checks per block:
-    #   Z1 Z2, Z2 Z3 in each block => total 3 × 2 = 6 Z-checks
-    # For phase-flip (X checks) we have two checks across blocks for each position:
-    #   X on qubit pos j in block1 vs block2, and block2 vs block3, for j = 1,2,3 => 3×2 = 6 X-checks
-    #
-    # But many rows are redundant; a minimal independent set yields fewer checks.
-    #
-    # For simplicity, here is a commonly used reduced form:
-    # We index qubits as 0..8, grouped in blocks [0,1,2], [3,4,5], [6,7,8].
 
     # Z-checks (detect X errors) — three intra-block parity checks:
     # (0,1), (1,2); (3,4),(4,5); (6,7),(7,8)
@@ -68,17 +54,6 @@ def steane_code() -> Tuple[np.ndarray, np.ndarray]:
     """
     Return (Hx, Hz) for the [[7,1,3]] Steane code.
 
-    The Steane code is CSS built from the classical [7,4,3] Hamming code.
-    The classical parity-check matrix H (3×7) is:
-
-        H = [[1,0,0,1,0,1,1],
-             [0,1,0,1,1,0,1],
-             [0,0,1,0,1,1,1]]
-
-    Then for the quantum CSS form:
-    - Hx = H (for Z-error checks),
-    - Hz = H (for X-error checks),
-      i.e. symmetrical in Steane’s case.
     """
     H = np.array([
         [1,0,0,1,0,1,1],
