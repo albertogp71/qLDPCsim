@@ -5,10 +5,36 @@ Performance evaluation utilities
 
 """
 
+import argparse
 import numpy as np
-from typing import Tuple
-import logical_ops_from_checks
-import decoders
+from typing import Optional, List, Tuple
+from qLDPCsim import logical_ops_from_checks
+from qLDPCsim import decoders
+import stim
+
+
+
+# -----------------------------
+# I/O helper functions
+# -----------------------------
+def load_matrix(path: str) -> np.ndarray:
+    """Load a binary matrix from .npy or whitespace text."""
+    if path.endswith(".npy"):
+        mat = np.load(path)
+    else:
+        # attempt to parse whitespace-separated 0/1 text
+        mat = []
+        with open(path, "rt") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                row = [int(x) for x in line.split()]
+                mat.append(row)
+        mat = np.array(mat, dtype=int)
+    return (mat % 2).astype(np.int8)
+
+
 
 
 # -----------------------------
@@ -128,6 +154,18 @@ def simulate(Hx: np.ndarray,
     weights = samples.sum(axis=1)
     avg_weight = float(weights.mean())
 
+    # syndromes histogram if small
+    syndrome_counts = None
+    if False: # shots <= 2000:
+        # convert rows to bitstring keys
+        keys, counts = np.unique(samples.astype(np.uint8).view([('b', 'u1') * samples.shape[1]]), return_counts=True)
+        # simpler: use string keys
+        sc = {}
+        for row in samples:
+            s = "".join(str(int(b)) for b in row.tolist())
+            sc[s] = sc.get(s, 0) + 1
+        syndrome_counts = sc
+
     logical_error_rate = None
     if (logical_X_ops is not None) or (logical_Z_ops is not None):
         # attempt simple decoding: for each shot, try to produce estimated errors for X and Z
@@ -144,25 +182,21 @@ def simulate(Hx: np.ndarray,
             sy_x = row[m_z:m_z+m_x].astype(int) if m_x else np.array([], dtype=int)
 
             # decode X-errors from sy_z using Hz (Hz * eX = sy_z)
-            eX_hat = naive_greedy_decoder(Hz if Hz.size else np.zeros((0, n_data), dtype=int), sy_z)
+            eX_hat = decoders.naive_greedy_decoder(Hz if Hz.size else np.zeros((0, n_data), dtype=int), sy_z)
             # decode Z-errors from sy_x using Hx
-            eZ_hat = naive_greedy_decoder(Hx if Hx.size else np.zeros((0, n_data), dtype=int), sy_x)
+            eZ_hat = decoders.naive_greedy_decoder(Hx if Hx.size else np.zeros((0, n_data), dtype=int), sy_x)
 
             # residuals are simply e_hat (since circuit applies error then we decode based on syndrome only)
             # Determine whether residuals anticommute with logical operators
             logical_failure = False
-            if logical_X_ops is not None:
-                # logical X ops detect Z residuals: dot(lx, eZ_hat) mod 2 != 0 indicates flip
-                for lx in logical_X_ops:
-                    if int(np.dot(lx % 2, eZ_hat % 2) % 2) == 1:
-                        logical_failure = True
-                        break
-            if (not logical_failure) and (logical_Z_ops is not None):
-                # logical Z ops detect X residuals
-                for lz in logical_Z_ops:
-                    if int(np.dot(lz % 2, eX_hat % 2) % 2) == 1:
-                        logical_failure = True
-                        break
+            for lx in logical_X_ops:
+                if int(np.dot(lx % 2, eZ_hat % 2) % 2) == 1:
+                    logical_failure = True
+                    break
+            for lz in logical_Z_ops:
+                if int(np.dot(lz % 2, eX_hat % 2) % 2) == 1:
+                    logical_failure = True
+                    break
             if logical_failure:
                 failures += 1
 

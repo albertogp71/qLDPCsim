@@ -60,7 +60,7 @@ def naive_greedy_decoder(H: np.ndarray, syndrome_bits: np.ndarray) -> np.ndarray
 # ---------------------------------------------------------------------
 def min_sum_decode(H: np.ndarray, syndrome: np.ndarray, p_err: float, max_iter: int = 50, eps: float = 1e-9) -> np.ndarray:
     """
-    Vectorized Min-Sum decoding for binary LDPC.
+    Min-Sum decoding for binary LDPC.
 
     Args:
         H : parity-check matrix (m x n)
