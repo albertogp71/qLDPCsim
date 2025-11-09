@@ -16,10 +16,10 @@ qLDPC is at an initial development stage -- more features will be added.
 
 Generate a pair of PCMs and save them to .npy files.
 You can generate your own matrices or take a pair from the library as follows: 
-- >>> from qLDPCsim import PCMlibrary as PCMlib
-- >>> Hx, Hz = PCMlib.five_qubit_code)
-- >>> np.save('Hx', Hx); np.save('Hz', Hz)
+- In [??]: from qLDPCsim import PCMlibrary as PCMlib
+- In [??]: Hx, Hz = PCMlib.five_qubit_code)
+- In [??]: np.save('Hx', Hx); np.save('Hz', Hz)
 
 Once the PCMs are on files, you can run the simulation as follows:
-- >>> run simulate --Hx Hx.npy --Hz Hz.npy --shots 10000 --p 0.1 
+- In [??]: run simulate --Hx Hx.npy --Hz Hz.npy --shots 10000 --p 0.1 
 
