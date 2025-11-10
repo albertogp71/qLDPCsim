@@ -62,7 +62,7 @@ def build_stim_circuit(Hx: np.ndarray, Hz: np.ndarray, p: float) -> Tuple[stim.C
     m_z, n_z = Hz.shape if Hz.size else (0, 0)
     # require same number of data qubits
     if (n_x != 0 and n_z != 0) and (n_x != n_z):
-        raise ValueError("Hx and Hz must have the same number of columns (data qubits).")
+        raise ValueError("Hx and Hz must have the same number of columns (physical qubits).")
     n = n_x if n_x != 0 else n_z
 
     # Build a circuit as a list of lines -> feed to stim.Circuit(...)
@@ -71,44 +71,30 @@ def build_stim_circuit(Hx: np.ndarray, Hz: np.ndarray, p: float) -> Tuple[stim.C
     # will automatically size the circuit qubit register to accommodate the largest index used.
     # We'll use data qubits 0..n-1, then ancillas n..n+m_z+m_x-1
     ancilla_start = n
-    ancilla_for_Z = list(range(ancilla_start, ancilla_start + m_z))
-    ancilla_for_X = list(range(ancilla_start + m_z, ancilla_start + m_z + m_x))
+    ancilla_Z = list(range(ancilla_start, ancilla_start + m_z))
+    ancilla_X = list(range(ancilla_start + m_z, ancilla_start + m_z + m_x))
 
     # 1) Apply depolarizing channel to each data qubit
-    #    Use the operation text form: DEPOLARIZE1(p) q
     for q in range(n):
         lines.append(f"DEPOLARIZE1({p}) {q}")
 
     # 2) For each Z-check (row of Hz): measure product of Zs using an ancilla
-    #    Circuit pattern:
-    #      # ancilla starts in |0>
-    #      CNOT data_q ancilla    for each q in support
-    #      M ancilla
-    #
-    #    We'll append measurements in the same order as Hz rows.
     for row_idx in range(m_z):
-        anc = ancilla_for_Z[row_idx]
-        # apply CNOT from each data qubit in the stabilizer to ancilla
+        anc = ancilla_Z[row_idx]
+        # apply CNOT to each physical qubit in the stabilizer to ancilla
         cols = np.where(Hz[row_idx] % 2 == 1)[0]
         for q in cols:
             lines.append(f"CNOT {q} {anc}")
         # measure ancilla in Z
         lines.append(f"M {anc}")
 
-    # 3) For each X-check (row of Hx): measure product of Xs by rotating data qubits with H
-    #    Pattern:
-    #      H q        for q in support
-    #      CNOT q anc  for each q in support
-    #      H q        for q in support    # undo
-    #      M anc
+    # 3) For each X-check (row of Hx): measure product of Xs by rotating physical qubits with H
     for row_idx in range(m_x):
-        anc = ancilla_for_X[row_idx]
+        anc = ancilla_X[row_idx]
         cols = np.where(Hx[row_idx] % 2 == 1)[0]
         for q in cols:
             lines.append(f"H {q}")
-        for q in cols:
             lines.append(f"CNOT {q} {anc}")
-        for q in cols:
             lines.append(f"H {q}")
         lines.append(f"M {anc}")
 
@@ -127,6 +113,8 @@ def simulate(Hx: np.ndarray,
              Hz: np.ndarray,
              p: float,
              shots: int = 1000,
+             decType: str = 'MS',
+             decIterations: int = 50,
              rng_seed: Optional[int] = None) -> dict:
     """
     Build the stim circuit, run shots, and (optionally) do naive decoding to estimate
@@ -141,9 +129,10 @@ def simulate(Hx: np.ndarray,
     if rng_seed is not None:
         np.random.seed(rng_seed)
 
+    print('Building stim circuit...')
     circ, n_data, n_meas, anc_start = build_stim_circuit(Hx, Hz, p)
 
-    logical_X_ops, logical_Z_ops = logical_ops_from_checks.logical_ops_from_css(Hx, Hz)
+    print(circ.diagram())
 
     # compile sampler and sample many shots
     sampler = circ.compile_sampler()
@@ -167,6 +156,7 @@ def simulate(Hx: np.ndarray,
         syndrome_counts = sc
 
     logical_error_rate = None
+    logical_X_ops, logical_Z_ops = logical_ops_from_checks.logical_ops_from_css(Hx, Hz)
     if (logical_X_ops is not None) or (logical_Z_ops is not None):
         # attempt simple decoding: for each shot, try to produce estimated errors for X and Z
         # From CSS: Hz (Z checks) detect X errors; Hx (X checks) detect Z errors.
@@ -175,16 +165,41 @@ def simulate(Hx: np.ndarray,
         m_x = Hx.shape[0] if Hx.size else 0
 
         failures = 0
+        decFailures = 0
+        n_iter_acc = 0
         for shot_idx in range(shots):
+            print(F'\rDecoding block n. {shot_idx}/{shots}', end='')
             row = samples[shot_idx]
             # row structure: [Hz measurements...] followed by [Hx measurements...]
             sy_z = row[:m_z].astype(int) if m_z else np.array([], dtype=int)
             sy_x = row[m_z:m_z+m_x].astype(int) if m_x else np.array([], dtype=int)
 
-            # decode X-errors from sy_z using Hz (Hz * eX = sy_z)
-            eX_hat = decoders.naive_greedy_decoder(Hz if Hz.size else np.zeros((0, n_data), dtype=int), sy_z)
-            # decode Z-errors from sy_x using Hx
-            eZ_hat = decoders.naive_greedy_decoder(Hx if Hx.size else np.zeros((0, n_data), dtype=int), sy_x)
+            print(f"\nsy_z is ", end='')
+            print("".join("_1"[e] for e in sy_z))
+            print(f"sy_x is ", end='')
+            print("".join("_1"[e] for e in sy_x))
+
+            match decType:
+                case "NG":
+                    # decode X-errors from sy_z using Hz (Hz * eX = sy_z)
+                    eX_hat = decoders.naive_greedy_decoder(Hz if Hz.size else np.zeros((0, n_data), dtype=int), sy_z)
+                    # decode Z-errors from sy_x using Hx
+                    eZ_hat = decoders.naive_greedy_decoder(Hx if Hx.size else np.zeros((0, n_data), dtype=int), sy_x)
+                case "MS":
+                    # decode X-errors from sy_z using Hz (Hz * eX = sy_z)
+                    eX_hat, n_iter_X = decoders.min_sum_decoder(Hz, sy_z, p=p/3, max_iter=decIterations)
+                    # decode Z-errors from sy_x using Hx
+                    eZ_hat, n_iter_Z = decoders.min_sum_decoder(Hx, sy_x, p=p/3, max_iter=decIterations)
+                    n_iter_acc += n_iter_X + n_iter_Z
+                case "BP":
+                    # decode X-errors from sy_z using Hz (Hz * eX = sy_z)
+                    eX_hat, n_iter_X = decoders.BP_decoder(Hz, sy_z, p=p/3, max_iter=decIterations)
+                    # decode Z-errors from sy_x using Hx
+                    eZ_hat, n_iter_Z = decoders.BP_decoder(Hx, sy_x, p=p/3, max_iter=decIterations)
+                    n_iter_acc += n_iter_X + n_iter_Z
+                case _:
+                    raise ValueError("Unrecognized decoder type.")
+
 
             # residuals are simply e_hat (since circuit applies error then we decode based on syndrome only)
             # Determine whether residuals anticommute with logical operators
@@ -199,14 +214,24 @@ def simulate(Hx: np.ndarray,
                     break
             if logical_failure:
                 failures += 1
+            decoder_failure = False
+            if np.array_equal(sy_z, (Hz.dot(eX_hat)) % 2):
+                decoder_failure = True
+            if np.array_equal(sy_x, (Hx.dot(eZ_hat)) % 2):
+                decoder_failure = True
+            if decoder_failure:
+                decFailures +=1
 
+        print()
         logical_error_rate = failures / shots
 
     return {
         "shots": shots,
         "avg_syndrome_weight": avg_weight,
         "syndrome_counts": syndrome_counts,
-        "logical_error_rate": logical_error_rate
+        "logical_error_rate": logical_error_rate,
+        "Decoder_failure_rate": decFailures / shots,
+        "Avg_number_of_iterations": n_iter_acc/shots
     }
 
 
@@ -217,21 +242,29 @@ def main(argv=None):
     parser.add_argument("--p", type=float, required=True, help="Depolarizing probability per qubit (0..1).")
     parser.add_argument("--shots", type=int, default=1000, help="Number of Monte Carlo shots.")
     parser.add_argument("--seed", type=int, default=None, help="RNG seed.")
+    parser.add_argument("--dectype", choices=['NG', 'MS', 'BP'], default='MS', help="Decoder type: [NG] Naive Greedy; [MS] Min-Sum; [BP] Belief Propagation.")
+    parser.add_argument("--deciterations", type=int, default=50, help="Number of decoding iterations.")
     args = parser.parse_args(argv)
 
     Hx = load_matrix(args.Hx)
     Hz = load_matrix(args.Hz)
 
-    res = simulate(Hx, Hz, p=args.p, shots=args.shots, rng_seed=args.seed)
+    res = simulate(Hx, Hz, p=args.p, shots=args.shots, rng_seed=args.seed, decType=args.dectype, decIterations=args.deciterations)
 
-    print(f"shots: {res['shots']}")
-    print(f"avg_syndrome_weight: {res['avg_syndrome_weight']:.4f}")
+    # print(f"shots: {res['shots']}")
+    # print(f"avg_syndrome_weight: {res['avg_syndrome_weight']:.4f}")
     if res['syndrome_counts'] is not None:
         print(f"unique syndrome patterns: {len(res['syndrome_counts'])}")
     if res['logical_error_rate'] is not None:
         print(f"estimated logical error rate: {res['logical_error_rate']:.6e}")
     else:
         print("logical operators not provided; only syndrome stats computed.")
+    if res['Decoder_failure_rate'] > 0:
+        print(f"Decoder failure rate: {res['Decoder_failure_rate']:.2f}")
+    if res['Avg_number_of_iterations'] > 0:
+        print(f"Avg number of iterations: {res['Avg_number_of_iterations']:.2f}")
+
+
 
 
 if __name__ == "__main__":
