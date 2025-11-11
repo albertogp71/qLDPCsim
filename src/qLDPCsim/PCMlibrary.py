@@ -137,8 +137,8 @@ def qc_ldpc_lifted_codes(family: str = "LP04",
 
     Btc = L - np.transpose(B)
     m_b, n_b = B.shape
-    Bx = np.concat((np.kron(B, np.identity(n_b)), np.kron(np.identity(m_b), Btc)), axis=1)
-    Bz = np.concat((np.kron(np.identity(n_b), B), np.kron(Btc, np.identity(m_b))), axis=1)
+    Bx = -1 + np.concat((np.kron(B+1, np.identity(n_b)), np.kron(np.identity(m_b), Btc+1)), axis=1)
+    Bz = -1 + np.concat((np.kron(np.identity(n_b), B+1), np.kron(Btc+1, np.identity(m_b))), axis=1)
 
     Hx = expand_base(Bx, L)
     Hz = expand_base(Bz, L)

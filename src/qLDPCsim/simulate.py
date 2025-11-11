@@ -65,6 +65,19 @@ def build_stim_circuit(Hx: np.ndarray, Hz: np.ndarray, p: float) -> Tuple[stim.C
         raise ValueError("Hx and Hz must have the same number of columns (physical qubits).")
     n = n_x if n_x != 0 else n_z
 
+    stabs = []
+    for r in range(m_z):
+        stZ = stim.PauliString.from_numpy(xs=np.zeros(Hz.shape[1]).astype(bool), zs=Hz[r,:].astype(bool))
+        stabs.append(stZ)
+    for r in range(m_x):
+        stX = stim.PauliString.from_numpy(xs=Hx[r,:].astype(bool), zs=np.zeros(Hx.shape[1]).astype(bool))
+        stabs.append(stX)
+    sTab = stim.Tableau.from_stabilizers(stabs, allow_underconstrained=True, allow_redundant=True)
+    circEnc = sTab.to_circuit()
+    # print(circEnc.diagram())
+
+
+
     # Build a circuit as a list of lines -> feed to stim.Circuit(...)
     lines = []
     # allocate qubits implicitly by referencing indices in operations. Stim
@@ -74,9 +87,17 @@ def build_stim_circuit(Hx: np.ndarray, Hz: np.ndarray, p: float) -> Tuple[stim.C
     ancilla_Z = list(range(ancilla_start, ancilla_start + m_z))
     ancilla_X = list(range(ancilla_start + m_z, ancilla_start + m_z + m_x))
 
+    # 0) Reset all qubit
+    for q in range(n,n + m_z):
+        lines.append(f"R {q}")
+    for q in range(n + m_z, n + m_z + m_x):
+        lines.append(f"R {q}")
+    lines.append('TICK')
+
     # 1) Apply depolarizing channel to each data qubit
     for q in range(n):
         lines.append(f"DEPOLARIZE1({p}) {q}")
+    lines.append('TICK')
 
     # 2) For each Z-check (row of Hz): measure product of Zs using an ancilla
     for row_idx in range(m_z):
@@ -86,7 +107,11 @@ def build_stim_circuit(Hx: np.ndarray, Hz: np.ndarray, p: float) -> Tuple[stim.C
         for q in cols:
             lines.append(f"CNOT {q} {anc}")
         # measure ancilla in Z
+    lines.append('TICK')
+    for row_idx in range(m_z):
+        anc = ancilla_Z[row_idx]
         lines.append(f"M {anc}")
+    lines.append('TICK')
 
     # 3) For each X-check (row of Hx): measure product of Xs by rotating physical qubits with H
     for row_idx in range(m_x):
@@ -96,11 +121,19 @@ def build_stim_circuit(Hx: np.ndarray, Hz: np.ndarray, p: float) -> Tuple[stim.C
             lines.append(f"H {q}")
             lines.append(f"CNOT {q} {anc}")
             lines.append(f"H {q}")
+    lines.append('TICK')
+    for row_idx in range(m_x):
+        anc = ancilla_X[row_idx]
         lines.append(f"M {anc}")
+    lines.append('TICK')
+
+    for q in range(-m_x-m_z,0):
+        lines.append(f"DETECTOR rec[{q}]")
+
 
     # Build circuit
     circ_text = "\n".join(lines)
-    circ = stim.Circuit(circ_text)
+    circ = circEnc + stim.Circuit(circ_text)
     total_meas = m_z + m_x
     return circ, n, total_meas, ancilla_start
 
@@ -132,12 +165,17 @@ def simulate(Hx: np.ndarray,
     print('Building stim circuit...')
     circ, n_data, n_meas, anc_start = build_stim_circuit(Hx, Hz, p)
 
-    print(circ.diagram())
+    # print(circ.diagram())
+
+    # dem = circ.detector_error_model()
+    # print(repr(dem))
 
     # compile sampler and sample many shots
     sampler = circ.compile_sampler()
+    sampDet = circ.compile_detector_sampler()
     # sample returns dtype uint8 array of shape (shots, n_meas) with measurement bits in the order we appended
     samples = sampler.sample(shots=shots)
+    samDets = sampDet.sample(shots=shots)
 
     # compute average syndrome weight
     weights = samples.sum(axis=1)
@@ -175,9 +213,11 @@ def simulate(Hx: np.ndarray,
             sy_x = row[m_z:m_z+m_x].astype(int) if m_x else np.array([], dtype=int)
 
             print(f"\nsy_z is ", end='')
-            print("".join("_1"[e] for e in sy_z))
+            print("".join("_1"[e] for e in sy_z)) #, end = ' ')
+            # print("".join("_1"[e] for e in samDets[shot_idx,:m_z].astype(int)))
             print(f"sy_x is ", end='')
-            print("".join("_1"[e] for e in sy_x))
+            print("".join("_1"[e] for e in sy_x)) #, end = ' ')
+            # print("".join("_1"[e] for e in samDets[shot_idx,m_z:].astype(int)))
 
             match decType:
                 case "NG":
