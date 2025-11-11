@@ -1,11 +1,15 @@
 # decoders.py
 
 """
-Decoders for quantum LDPC codes
+Decoders for quantum LDPC codes.
+All these decoders take in input a syndrome and a parity-check matrix.
+The decoders produce an estimated error vector.
+Iterative decoders also return the number of iterations.
 
 REFERENCES
 [1] https://doi.org/10.48550/arXiv.2205.02341
-[2] 
+[2] (Any paper with BP)
+[3] Vasic et al., Collective Bit-Flipping...
 """
 
 import numpy as np
@@ -17,11 +21,11 @@ import sys
 
 
 # -----------------------------
-# Simple naive syndrome->correction heuristic
+# Simple naive greedy (NG) decoder
 # -----------------------------
 def naive_greedy_decoder(H: np.ndarray, syndrome_bits: np.ndarray) -> np.ndarray:
     """
-    A very simple greedy decoder for demonstration:
+    A very simple greedy decoder:
     - repeatedly pick a variable node connected to the currently nonzero syndrome with highest degree,
       flip that variable in the candidate error, update the syndrome, and repeat up to some limit.
     """
@@ -50,14 +54,49 @@ def naive_greedy_decoder(H: np.ndarray, syndrome_bits: np.ndarray) -> np.ndarray
         # update residual
         for c in var_to_checks[v]:
             residual[c] ^= 1
-    return est
 
+    return est, steps
 
 
 
 
 # ---------------------------------------------------------------------
-# Min-Sum decoder [1]
+# Bit-Flipping (BF) decoder [3]
+# ---------------------------------------------------------------------
+def BF_decoder(H: np.ndarray, syndrome: np.ndarray, max_iter: int = 50) -> np.ndarray:
+    """
+    Bit-flipping decoder
+
+    Args:
+        H : parity-check matrix (m x n)
+        syndrome : length-m binary array
+        max_iter : max number of iuterations
+    Returns:
+        estimated error vector (0/1)
+    """
+    if H.size == 0 or syndrome.size == 0:
+        return np.zeros(H.shape[1] if H.size else 0, dtype=np.int8)
+
+    e_hat = np.zeros((H.shape[1]))      # Estimated error pattern
+    r = syndrome                        # Residual syndrome
+    nChecks = np.sum(H, axis=0)
+    s_hat = syndrome
+
+    for n_iter in range(max_iter):
+        nuc = r @ H     # Number of unsatisfied checks
+        e_hat = e_hat.astype(bool) ^ (nuc > nChecks/2.)
+        s_hat = H @ e_hat
+        r = s_hat.astype(bool) ^ syndrome
+        if np.sum(r) == 0:
+            return e_hat, (n_iter+1)
+
+    return e_hat, max_iter
+
+
+
+
+# ---------------------------------------------------------------------
+# Min-Sum (MS) decoder [1]
 # ---------------------------------------------------------------------
 def min_sum_decoder(H: np.ndarray, syndrome: np.ndarray, p: float, max_iter: int = 50, beta: float = 0.75, eps: float = 1e-9) -> np.ndarray:
     """
@@ -103,15 +142,15 @@ def min_sum_decoder(H: np.ndarray, syndrome: np.ndarray, p: float, max_iter: int
         posterior = L_ch + VNsum
         e_hat = (posterior < 0).astype(np.int8)
         if np.array_equal(syndrome, (H.dot(e_hat)) % 2):
-            return e_hat, n_iter
+            return e_hat, (n_iter+1)
         msg_v2c = np.where(H == 1, posterior - msg_c2v, 0.0)
 
-    return e_hat, n_iter
+    return e_hat, max_iter
 
 
 
 # ---------------------------------------------------------------------
-# Belief Propagation decoder
+# Belief Propagation (BP) decoder
 # ---------------------------------------------------------------------
 def BP_decoder(H: np.ndarray, syndrome: np.ndarray, p: float, max_iter: int = 50, eps: float = 1e-9) -> np.ndarray:
     """
@@ -181,11 +220,14 @@ def BP_decoder(H: np.ndarray, syndrome: np.ndarray, p: float, max_iter: int = 50
             else:
                 L_post[j] = L0
 
-        est = (L_post < 0).astype(int)
+        e_hat = (L_post < 0).astype(int)
 
         # Check syndrome satisfaction
-        syn_est = (H @ est) % 2
+        syn_est = (H @ e_hat) % 2
         if np.all(syn_est == syndrome):
-            return est, n_iter
+            return e_hat, n_iter+1
 
-    return est, n_iter
+    return e_hat, max_iter
+
+
+

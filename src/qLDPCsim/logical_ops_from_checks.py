@@ -110,6 +110,7 @@ def logical_ops_from_css(Hx: np.ndarray, Hz: np.ndarray) -> Tuple[np.ndarray, np
         return np.array(independent, dtype=int)
 
     logical_X = remove_dependents(nx, Hz)
+    breakpoint()
     logical_Z = remove_dependents(nz, Hx)
     return logical_X, logical_Z
 

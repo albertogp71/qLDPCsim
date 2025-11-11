@@ -162,20 +162,25 @@ def simulate(Hx: np.ndarray,
     if rng_seed is not None:
         np.random.seed(rng_seed)
 
-    print('Building stim circuit...')
+
+
+    print('Building stim circuit...', end='', flush=True)
     circ, n_data, n_meas, anc_start = build_stim_circuit(Hx, Hz, p)
-
     # print(circ.diagram())
+    print('done.')
 
+    
     # dem = circ.detector_error_model()
     # print(repr(dem))
 
+    print('Sampling stim circuit...', end='', flush=True)
     # compile sampler and sample many shots
     sampler = circ.compile_sampler()
-    sampDet = circ.compile_detector_sampler()
+    # sampDet = circ.compile_detector_sampler()
     # sample returns dtype uint8 array of shape (shots, n_meas) with measurement bits in the order we appended
     samples = sampler.sample(shots=shots)
-    samDets = sampDet.sample(shots=shots)
+    # samDets = sampDet.sample(shots=shots)
+    print('done.')
 
     # compute average syndrome weight
     weights = samples.sum(axis=1)
@@ -196,52 +201,48 @@ def simulate(Hx: np.ndarray,
     logical_error_rate = None
     logical_X_ops, logical_Z_ops = logical_ops_from_checks.logical_ops_from_css(Hx, Hz)
     if (logical_X_ops is not None) or (logical_Z_ops is not None):
-        # attempt simple decoding: for each shot, try to produce estimated errors for X and Z
-        # From CSS: Hz (Z checks) detect X errors; Hx (X checks) detect Z errors.
-        # We'll use naive_greedy_decoder on each set independently.
         m_z = Hz.shape[0] if Hz.size else 0
         m_x = Hx.shape[0] if Hx.size else 0
 
         failures = 0
         decFailures = 0
-        n_iter_acc = 0
+        nIterAcc = 0
         for shot_idx in range(shots):
-            print(F'\rDecoding block n. {shot_idx}/{shots}', end='')
+            print(F'\rDecoding block n. {shot_idx+1:3}/{shots:4}...', end='', flush=True)
             row = samples[shot_idx]
             # row structure: [Hz measurements...] followed by [Hx measurements...]
             sy_z = row[:m_z].astype(int) if m_z else np.array([], dtype=int)
             sy_x = row[m_z:m_z+m_x].astype(int) if m_x else np.array([], dtype=int)
 
-            print(f"\nsy_z is ", end='')
-            print("".join("_1"[e] for e in sy_z)) #, end = ' ')
-            # print("".join("_1"[e] for e in samDets[shot_idx,:m_z].astype(int)))
-            print(f"sy_x is ", end='')
-            print("".join("_1"[e] for e in sy_x)) #, end = ' ')
-            # print("".join("_1"[e] for e in samDets[shot_idx,m_z:].astype(int)))
+            # print(f"\nsy_z is ", end='')
+            # print("".join("_1"[e] for e in sy_z)) #, end = ' ')
+            # # print("".join("_1"[e] for e in samDets[shot_idx,:m_z].astype(int)))
+            # print(f"sy_x is ", end='')
+            # print("".join("_1"[e] for e in sy_x)) #, end = ' ')
+            # # print("".join("_1"[e] for e in samDets[shot_idx,m_z:].astype(int)))
 
             match decType:
                 case "NG":
-                    # decode X-errors from sy_z using Hz (Hz * eX = sy_z)
-                    eX_hat = decoders.naive_greedy_decoder(Hz if Hz.size else np.zeros((0, n_data), dtype=int), sy_z)
-                    # decode Z-errors from sy_x using Hx
-                    eZ_hat = decoders.naive_greedy_decoder(Hx if Hx.size else np.zeros((0, n_data), dtype=int), sy_x)
+                    eX_hat, nIterX = decoders.naive_greedy_decoder(Hz if Hz.size else np.zeros((0, n_data), dtype=int), sy_z)
+                    eZ_hat, nIterZ = decoders.naive_greedy_decoder(Hx if Hx.size else np.zeros((0, n_data), dtype=int), sy_x)
+                    nIterAcc += nIterX + nIterZ
+                case "BF":
+                    eX_hat, nIterX = decoders.BF_decoder(Hz if Hz.size else np.zeros((0, n_data), dtype=int), sy_z)
+                    eZ_hat, nIterZ = decoders.BF_decoder(Hx if Hx.size else np.zeros((0, n_data), dtype=int), sy_x)
+                    nIterAcc += nIterX + nIterZ
                 case "MS":
-                    # decode X-errors from sy_z using Hz (Hz * eX = sy_z)
-                    eX_hat, n_iter_X = decoders.min_sum_decoder(Hz, sy_z, p=p/3, max_iter=decIterations)
-                    # decode Z-errors from sy_x using Hx
-                    eZ_hat, n_iter_Z = decoders.min_sum_decoder(Hx, sy_x, p=p/3, max_iter=decIterations)
-                    n_iter_acc += n_iter_X + n_iter_Z
+                    eX_hat, nIterX = decoders.min_sum_decoder(Hz, sy_z, p=p/3, max_iter=decIterations)
+                    eZ_hat, nIterZ = decoders.min_sum_decoder(Hx, sy_x, p=p/3, max_iter=decIterations)
+                    nIterAcc += nIterX + nIterZ
                 case "BP":
-                    # decode X-errors from sy_z using Hz (Hz * eX = sy_z)
-                    eX_hat, n_iter_X = decoders.BP_decoder(Hz, sy_z, p=p/3, max_iter=decIterations)
-                    # decode Z-errors from sy_x using Hx
-                    eZ_hat, n_iter_Z = decoders.BP_decoder(Hx, sy_x, p=p/3, max_iter=decIterations)
-                    n_iter_acc += n_iter_X + n_iter_Z
+                    eX_hat, nIterX = decoders.BP_decoder(Hz, sy_z, p=p/3, max_iter=decIterations)
+                    eZ_hat, nIterZ = decoders.BP_decoder(Hx, sy_x, p=p/3, max_iter=decIterations)
+                    nIterAcc += nIterX + nIterZ
                 case _:
                     raise ValueError("Unrecognized decoder type.")
 
 
-            # residuals are simply e_hat (since circuit applies error then we decode based on syndrome only)
+            # Residuals are simply e_hat (since circuit applies error then we decode based on syndrome only)
             # Determine whether residuals anticommute with logical operators
             logical_failure = False
             for lx in logical_X_ops:
@@ -255,23 +256,24 @@ def simulate(Hx: np.ndarray,
             if logical_failure:
                 failures += 1
             decoder_failure = False
-            if np.array_equal(sy_z, (Hz.dot(eX_hat)) % 2):
+            if not np.array_equal(sy_z, (Hz.dot(eX_hat)) % 2):
                 decoder_failure = True
-            if np.array_equal(sy_x, (Hx.dot(eZ_hat)) % 2):
+            if not np.array_equal(sy_x, (Hx.dot(eZ_hat)) % 2):
                 decoder_failure = True
             if decoder_failure:
                 decFailures +=1
-
+            print(f'N. iterations: {nIterX:2},{nIterZ:2}, Dec. failure rate: {decFailures/(shot_idx+1):.3f}')
+            
         print()
-        logical_error_rate = failures / shots
+        logical_error_rate = failures / float(shots)
 
     return {
         "shots": shots,
         "avg_syndrome_weight": avg_weight,
         "syndrome_counts": syndrome_counts,
         "logical_error_rate": logical_error_rate,
-        "Decoder_failure_rate": decFailures / shots,
-        "Avg_number_of_iterations": n_iter_acc/shots
+        "Decoder_failure_rate": decFailures/float(shots),
+        "Avg_number_of_iterations": nIterAcc/float(shots)
     }
 
 
@@ -282,7 +284,7 @@ def main(argv=None):
     parser.add_argument("--p", type=float, required=True, help="Depolarizing probability per qubit (0..1).")
     parser.add_argument("--shots", type=int, default=1000, help="Number of Monte Carlo shots.")
     parser.add_argument("--seed", type=int, default=None, help="RNG seed.")
-    parser.add_argument("--dectype", choices=['NG', 'MS', 'BP'], default='MS', help="Decoder type: [NG] Naive Greedy; [MS] Min-Sum; [BP] Belief Propagation.")
+    parser.add_argument("--dectype", choices=['NG', 'BF', 'MS', 'BP'], default='MS', help="Decoder type: [NG] Naive Greedy; [MS] Min-Sum; [BP] Belief Propagation.")
     parser.add_argument("--deciterations", type=int, default=50, help="Number of decoding iterations.")
     args = parser.parse_args(argv)
 
@@ -296,11 +298,10 @@ def main(argv=None):
     if res['syndrome_counts'] is not None:
         print(f"unique syndrome patterns: {len(res['syndrome_counts'])}")
     if res['logical_error_rate'] is not None:
-        print(f"estimated logical error rate: {res['logical_error_rate']:.6e}")
+        print(f"Logical error rate: {res['logical_error_rate']:.6e}")
+        print(f"Decoder failure rate: {res['Decoder_failure_rate']:.2e}")
     else:
         print("logical operators not provided; only syndrome stats computed.")
-    if res['Decoder_failure_rate'] > 0:
-        print(f"Decoder failure rate: {res['Decoder_failure_rate']:.2f}")
     if res['Avg_number_of_iterations'] > 0:
         print(f"Avg number of iterations: {res['Avg_number_of_iterations']:.2f}")
 
