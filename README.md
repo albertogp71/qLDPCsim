@@ -1,5 +1,7 @@
 # qLDPCsim <-|+> a quantum LDPC simulator
 ---
+
+## Bried description
 qLDPCsim is a simulation toolkit for quantum LDPC (CSS-type) error correction codes focused on decoding algorithms.
 qLDPCsim creates a [stim](https://github.com/quantumlib/Stim) circuit based on a pair of parity check matrices Hx, Hz.
 The *stim* circuit
@@ -7,13 +9,16 @@ The *stim* circuit
 - simulates a depolarizing channel
 - generates the syndromes.
 
-The syndromes are processed by the quantum LDPC decoder.
-Currently available decoding algorithms are
+The syndromes are processed by the quantum LDPC decoder so as to obtain corresponding error sequences to be used for correction.
+Currently available decoding algorithms are:
 - conventional iterative belief-propagation
 - the iterative sum-product algorithm
 - the bit-flipping algorithm 
-...but many more are up to come!!
 
+...and many more to come!!
+
+
+## Source code structure
 The source code is organized in modules:
 - **simulate**: simulation execution and error statistics evaluation.
 - **PCMlibrary**: a library of parity check matrix pairs (Hx, Hz).
@@ -23,10 +28,7 @@ The source code is organized in modules:
 Please be aware that qLDPCsim is at an initial development stage -- code stability is not guaranteed!
 
 
-
-
-## Installation guide
-
+## Installation
 Clone the git repository, cd to the src subfolder.
 
 Generate a pair of PCMs and save them to .npy files.
