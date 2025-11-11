@@ -1,11 +1,11 @@
-# qLDPCsim <-|-> a quantum LDPC simulator
+# qLDPCsim <-|+> a quantum LDPC simulator
 ---
 qLDPCsim is a simulation toolkit for quantum LDPC (CSS-type) error correction codes focused on decoding algorithms.
 qLDPCsim creates a [stim](https://github.com/quantumlib/Stim) circuit based on a pair of parity check matrices Hx, Hz.
 The *stim* circuit
 - encodes logical qubits into physical qubits
 - simulates a depolarizing channel
-- generates the symdromes.
+- generates the syndromes.
 
 The syndromes are processed by the quantum LDPC decoder.
 Currently available decoding algorithms are
