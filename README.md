@@ -1,4 +1,4 @@
-# ==<q|LDPC|sim>== a quantum LDPC simulator
+# <q|LDPC|sim> a quantum LDPC simulator
 ---
 
 ## Brief description
