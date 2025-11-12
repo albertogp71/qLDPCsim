@@ -101,6 +101,7 @@ def logical_ops_from_css(Hx: np.ndarray, Hz: np.ndarray) -> Tuple[np.ndarray, np
         stabilizers = row_reduce_mod2(stabilizers)
         independent = []
         for v in space:
+            breakpoint()
             combo = np.vstack([stabilizers, v])
             reduced = row_reduce_mod2(combo)
             # if rank increases, v adds a new independent direction

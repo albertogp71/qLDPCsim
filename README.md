@@ -1,21 +1,22 @@
-# <q|LDPC|sim> a quantum LDPC simulator
+# $\left\langle\textrm{\Large \bf q}\,\vrule\, {}^\textrm{LDPC}_\textrm{sim}\right\rangle$ -- a quantum LDPC simulator
 ---
 
 ## Brief description
 qLDPCsim is a simulation toolkit for quantum LDPC (CSS-type) error correction codes focused on decoding algorithms.
-qLDPCsim creates a [stim](https://github.com/quantumlib/Stim) circuit based on a pair of parity check matrices **H_x**, **H_z**.
-The *stim* circuit
-- encodes logical qubits to physical qubits
+qLDPCsim creates a [Stim](https://github.com/quantumlib/Stim) circuit based on a pair of parity check matrices **H_x**, **H_z**.
+The Stim circuit
+- generates a sequence of random logical qubits
+- encodes the logical qubits to physical qubits
 - simulates a depolarizing channel
-- generates the syndromes.
+- generates a pair of syndromes.
 
 The syndromes are processed by the quantum LDPC decoder so as to obtain corresponding error sequences to be used for correction.
 Currently available decoding algorithms are:
 - conventional iterative belief-propagation
 - the iterative sum-product algorithm
-- the bit-flipping algorithm 
+- the bit-flipping algorithm
 
-...and many more to come!!
+More decoders are in my plans - stay tuned!!
 
 
 ## Source code structure
@@ -29,10 +30,10 @@ Please be aware that qLDPCsim is at an initial development stage -- code stabili
 
 
 ## Installation
-Clone the git repository, cd to the src subfolder.
+Clone the git repository to a local drive, cd to the src subfolder.
 
 Generate a pair of PCMs and save them to .npy files.
-You can generate your own matrices or take a pair from the library as follows: 
+You can generate your own matrices, or you can take a pair from the library as follows: 
 - In [?]: import numpy as np
 - In [?]: from qLDPCsim import PCMlibrary as PCMlib
 - In [?]: Hx, Hz = PCMlib.five_qubit_code()
@@ -43,3 +44,6 @@ Once the PCMs are on files, you can run the simulation as follows:
 - In [?]: cd qLDPCsim
 - In [?]: run simulate --Hx Hx.npy --Hz Hz.npy --shots 10000 --p 0.1 
 
+
+Thanks for your interest in !
+Alberto

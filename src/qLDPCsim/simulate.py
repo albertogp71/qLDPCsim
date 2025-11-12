@@ -8,7 +8,8 @@ Performance evaluation utilities
 import argparse
 import numpy as np
 from typing import Optional, List, Tuple
-from qLDPCsim import logical_ops_from_checks
+# from qLDPCsim import logical_ops_from_checks
+from qLDPCsim import logical_ops_css
 from qLDPCsim import decoders
 import stim
 
@@ -199,7 +200,9 @@ def simulate(Hx: np.ndarray,
         syndrome_counts = sc
 
     logical_error_rate = None
-    logical_X_ops, logical_Z_ops = logical_ops_from_checks.logical_ops_from_css(Hx, Hz)
+    # logical_X_ops, logical_Z_ops = logical_ops_from_checks.logical_ops_from_css(Hx, Hz)
+    logical_X_ops, logical_Z_ops, nlq = logical_ops_css.logical_ops_css(Hx, Hz)
+    breakpoint()
     if (logical_X_ops is not None) or (logical_Z_ops is not None):
         m_z = Hz.shape[0] if Hz.size else 0
         m_x = Hx.shape[0] if Hx.size else 0
