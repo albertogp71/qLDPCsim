@@ -1,5 +1,6 @@
-# <img src="qLDPClogo.jpg" alt="qLDPCsim logo" style="width:10%; height:auto;"> -- a quantum LDPC simulator
----
+<p style="text-align: center;">
+	<img src="qLDPClogo.jpg" alt="qLDPCsim logo" style="width:15%; height:auto;"> <br> A quantum LDPC simulator
+</p>
 
 ## Brief description
 qLDPCsim is a simulation toolkit for quantum LDPC (CSS-type) error correction codes focused on decoding algorithms.
