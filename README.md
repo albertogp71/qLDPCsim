@@ -1,4 +1,4 @@
-# $\left\langle\textrm{\Large \bf q}\,\vrule\, {}^\textrm{LDPC}_\textrm{sim}\right\rangle$ -- a quantum LDPC simulator
+# ![qLDPCsim Logo](qLDPClogo.jpg) -- a quantum LDPC simulator
 ---
 
 ## Brief description
