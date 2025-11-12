@@ -1,4 +1,4 @@
-# ![qLDPCsim Logo](qLDPClogo.jpg){width=50%} -- a quantum LDPC simulator
+# <img src="qLDPClogo.jpg" alt="qLDPCsim logo" style="width:50%; height:auto;"> -- a quantum LDPC simulator
 ---
 
 ## Brief description
