@@ -13,6 +13,7 @@ REFERENCES
 [2] https://doi.org/10.1098/rspa.1996.0136.
 [3] https://arxiv.org/abs/quant-ph/9602019
 [4] Quantum 6, 767 (2022).
+[5] DOI: 10.1109/TIT.2004.838370.
 """
 
 import numpy as np
@@ -60,10 +61,50 @@ def steane_code() -> Tuple[np.ndarray, np.ndarray]:
 
 
 
+def qc_ldpc_tanner_code() -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Return (Hx, Hz) for the quasi-cyclic Tanner LDPC code from [5].
+
+    Returns:
+        Hx, Hz : binary parity-check matrices after lifting
+    """
+
+    def expand_base(B: np.ndarray, L: int) -> np.ndarray:
+        m_b, n_b = B.shape
+        H = np.zeros((m_b * L, n_b * L), dtype=int)
+        I = np.eye(L, dtype=int)
+        for i in range(m_b):
+            for j in range(n_b):
+                shift = B[i, j]
+                if shift >= 0:
+                    H[i*L:(i+1)*L, j*L:(j+1)*L] = np.roll(I, shift, axis=1)
+        return H
+
+    L = 31
+    B = np.array([
+        [ 1,  2,  4,  8, 16],
+        [ 5, 10, 20,  9, 18],
+        [25, 19,  7, 14, 28]], dtype=int)
+
+    Btc = L - np.transpose(B)
+    m_b, n_b = B.shape
+    Bx = -1 + np.concat((np.kron(B+1, np.identity(n_b)), np.kron(np.identity(m_b), Btc+1)), axis=1)
+    Bz = -1 + np.concat((np.kron(np.identity(n_b), B+1), np.kron(Btc+1, np.identity(m_b))), axis=1)
+
+    Hx = expand_base(Bx, L)
+    Hz = expand_base(Bz, L)
+
+    return Hx, Hz
+
+
+
+
+
+
 def qc_ldpc_lifted_codes(family: str = "LP04", 
                          index: int = 0) -> Tuple[np.ndarray, np.ndarray]:
     """
-    Return (Hx, Hz) for the quasi-cyclic lifted LDPC codes from [4].
+    Return (Hx, Hz) for the quasi-cyclic lifted product (LP) LDPC codes from [4].
 
     Returns:
         Hx, Hz : binary parity-check matrices after lifting

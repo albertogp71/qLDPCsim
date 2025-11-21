@@ -1,0 +1,19 @@
+[project]
+name = "qLDPCsim"
+version = "0.0.1"
+authors = [
+  { name="AlbertoGP71", email="albertogp71@noemailsatthisaddress.com" },
+]
+description = "A quantum LDPC code simulation toolkit"
+readme = "README.md"
+requires-python = ">=3.13"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+license-files = ["LICENSE"]
+
+[project.urls]
+Homepage = "https://github.com/pypa/sampleproject"
+Issues = "https://github.com/pypa/sampleproject/issues"
