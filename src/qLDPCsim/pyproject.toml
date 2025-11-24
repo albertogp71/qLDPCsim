@@ -23,5 +23,8 @@ dependencies = [
 license = "MIT"
 license-files = ["LICENSE"]
 
+[tool.setuptools]
+packages = ["qLDPCsim"] 
+
 [project.urls]
 Homepage = "https://github.com/AlbertoGP71/qLDPCsim"
