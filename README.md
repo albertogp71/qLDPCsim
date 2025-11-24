@@ -34,13 +34,17 @@ Please be aware that qLDPCsim is at an initial development stage -- code stabili
 
 
 ## Installation
-Clone the git repository to a local drive, cd to the src subfolder.
+
+pip install git+https://github.com/AlbertoGP71/qLDPCsim.git
+
+
+## Usage
 
 Generate a pair of PCMs and save them to .npy files.
 You can generate your own matrices, or you can take a pair from the library as follows: 
 - In [?]: import numpy as np
 - In [?]: from qLDPCsim import PCMlibrary as PCMlib
-- In [?]: Hx, Hz = PCMlib.five_qubit_code()
+- In [?]: Hx, Hz = PCMlib.shor_code()
 - In [?]: np.save('Hx', Hx); np.save('Hz', Hz)
 
 Once the PCMs are on files, you can run the simulation as follows:
