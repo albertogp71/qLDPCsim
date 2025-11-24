@@ -1,8 +1,12 @@
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "qLDPCsim"
 version = "0.0.1"
 authors = [
-  { name="AlbertoGP71", email="albertogp71@noemailsatthisaddress.com" },
+  { name="AlbertoGP71", email="albertogp71.github@gmail.com" },
 ]
 description = "A quantum LDPC code simulation toolkit"
 readme = "README.md"
@@ -11,9 +15,13 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
 ]
+dependencies = [
+  "stim>=1.15.0",
+  "numpy>=2.3.5",
+  "argparse>=1.1"
+]
 license = "MIT"
 license-files = ["LICENSE"]
 
 [project.urls]
-Homepage = "https://github.com/pypa/sampleproject"
-Issues = "https://github.com/pypa/sampleproject/issues"
+Homepage = "https://github.com/AlbertoGP71/qLDPCsim"

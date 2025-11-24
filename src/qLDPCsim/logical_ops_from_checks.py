@@ -1,5 +1,7 @@
-# logical_ops_from_checks.py
 """
+Copyright (c) 2025, Alberto G. Perotti
+All rights reserved.
+
 Compute logical X and Z operators for a CSS quantum code defined by (Hx, Hz).
 The code assumes binary matrices over GF(2).
 

@@ -1,18 +1,17 @@
-# simulate.py
-
 """
-Performance evaluation utilities 
+Copyright (c) 2025, Alberto G. Perotti
+All rights reserved.
+
+User callable function .
 
 """
 
 import argparse
 import numpy as np
-from typing import Optional, List, Tuple
-from qLDPCsim import logical_ops_from_checks
-# from qLDPCsim import logical_ops_css
 from qLDPCsim import decoders, gf2math
 import stim
-from qLDPCsim import stimEncoder
+from typing import Tuple, Optional
+
 
 
 # -----------------------------
@@ -61,7 +60,7 @@ def build_stim_circuit(Hx: np.ndarray, Hz: np.ndarray, p: float) -> Tuple[stim.C
 
     m_x, n_x = Hx.shape if Hx.size else (0, 0)
     m_z, n_z = Hz.shape if Hz.size else (0, 0)
-    # Check that same number of data qubits
+    # Check that same number of physical qubits
     if (n_x != 0 and n_z != 0) and (n_x != n_z):
         raise ValueError("Hx and Hz must have the same number of columns (physical qubits).")
     n = n_x if n_x != 0 else n_z
@@ -81,7 +80,6 @@ def build_stim_circuit(Hx: np.ndarray, Hz: np.ndarray, p: float) -> Tuple[stim.C
     encT = stim.Tableau.from_stabilizers(stabX + stabZ, allow_underconstrained=True, allow_redundant=True)
     encC = encT.to_circuit(method='elimination')
 
-
     circEnc  = stim.Circuit('R' + ''.join(f' {q}' for q in range(n)))
     circEnc += stim.Circuit('DEPOLARIZE1(0.75)' + ''.join(f' {q}' for q in range(n-1,n-k-1,-1)))
     circEnc += encC
@@ -95,8 +93,8 @@ def build_stim_circuit(Hx: np.ndarray, Hz: np.ndarray, p: float) -> Tuple[stim.C
 
     # Apply depolarizing channel to each physical qbit, and reset syndrome generator ancilla qubits
     lines = []
-    lines.append(f"DEPOLARIZE1({p})" + "".join(f" {q}" for q in range(n)))
-    lines.append("R" + "".join(f" {q}" for q in range(n, n + m_z + m_x)))
+    lines.append(f'DEPOLARIZE1({p})' + ''.join(f' {q}' for q in range(n)))
+    lines.append('R' + ''.join(f' {q}' for q in range(n, n + m_z + m_x)))
     circChannel = stim.Circuit("\n".join(lines))
 
     # For each Z-check: CNOT of physical qbit (controlling) and ancilla (controlled)
@@ -104,7 +102,7 @@ def build_stim_circuit(Hx: np.ndarray, Hz: np.ndarray, p: float) -> Tuple[stim.C
     for row_idx in range(m_z):
         anc = ancilla_Z[row_idx]
         cols = np.where(Hz[row_idx] % 2 == 1)[0]
-        lines.append("CNOT" + "".join(f" {q} {anc}" for q in cols))
+        lines.append('CNOT' + ''.join(f' {q} {anc}' for q in cols))
         
     # For each X-check: H on physical qbit + CNOT of physical qbit (controlling) and ancilla (controlled) + H
     lines.append('TICK')
@@ -114,14 +112,14 @@ def build_stim_circuit(Hx: np.ndarray, Hz: np.ndarray, p: float) -> Tuple[stim.C
         anc = ancilla_X[row_idx]
         cols = np.where(Hx[row_idx] % 2 == 1)[0]
         for q in cols:
-            lines.append(f"CNOT {anc} {q}")
+            lines.append(f'CNOT {anc} {q}')
     lines.append('TICK')
     lines.append('H' + ''.join(f' {ancilla_X[row_idx]}' for row_idx in range(m_x)))
     lines.append('TICK')
     
     # Measure ancillas
-    lines.append("M" + "".join(f" {ancilla_Z[row_idx]}" for row_idx in range(m_z)))
-    lines.append("M" + "".join(f" {ancilla_X[row_idx]}" for row_idx in range(m_x)))
+    lines.append('M' + ''.join(f' {ancilla_Z[row_idx]}' for row_idx in range(m_z)))
+    lines.append('M' + ''.join(f' {ancilla_X[row_idx]}' for row_idx in range(m_x)))
     
 
     # Build circuit
@@ -141,6 +139,7 @@ def simulate(Hx: np.ndarray,
              shots: int = 1000,
              decType: str = 'MS',
              decIterations: int = 99,
+             decSchedule: str = 'F',
              rng_seed: Optional[int] = None) -> dict:
     """
     Build the stim circuit, run shots, and (optionally) do naive decoding to estimate
@@ -166,11 +165,11 @@ def simulate(Hx: np.ndarray,
     # breakpoint()
     print('generating logical operators...', end='', flush=True)
     # logical_X_ops, logical_Z_ops = logical_ops_from_checks.logical_ops_from_css(Hx, Hz)
-    Gz = gf2math.nullSpace(Hx)
-    Gx = gf2math.nullSpace(Hz)
-    breakpoint()
-    Gz = logical_ops_from_checks.remove_dependents(Gz, Hz)
-    Gx = logical_ops_from_checks.remove_dependents(Gx, Hx)
+    # Gz = gf2math.nullSpace(Hx)
+    # Gx = gf2math.nullSpace(Hz)
+
+    # Gz = logical_ops_from_checks.remove_dependents(Gz, Hz)
+    # Gx = logical_ops_from_checks.remove_dependents(Gx, Hx)
     print('done.', end='', flush=True)
 
 
@@ -178,6 +177,30 @@ def simulate(Hx: np.ndarray,
     m_z = Hz.shape[0] if Hz.size else 0
     m_x = Hx.shape[0] if Hx.size else 0
 
+    def layerize(H:np.ndarray, serial:bool = False):
+        layers = []
+        m = H.shape[0]
+        mUp = 1
+        mDn = 0
+        while mUp <= m:
+            if np.max(np.sum(H[mDn:mUp,:], axis=0)) > 1 or (serial and mUp > mDn+1):
+                layers.append(np.arange(mDn,mUp-1))
+                mDn = mUp-1
+            else:
+                mUp += 1
+        layers.append(np.arange(mDn,mUp-1))
+        return layers
+
+    match decSchedule:
+        case "F":
+            layersX = [np.arange(m_x)]
+            layersZ = [np.arange(m_z)]
+        case "L" | "S":
+            layersX = layerize(Hx, serial=True if decSchedule== "S" else False)
+            layersZ = layerize(Hz, serial=True if decSchedule== "S" else False)
+        case _:
+            raise ValueError("Unrecognized decoder scheduling option.")
+        
     corrFailures = 0
     decFailures = 0
     nIterAccX = 0
@@ -199,17 +222,17 @@ def simulate(Hx: np.ndarray,
 
         match decType:
             case "NG":
-                eX_hat, nIterX = decoders.naive_greedy_decoder(Hz if Hz.size else np.zeros((0, n_data), dtype=int), sy_z)
-                eZ_hat, nIterZ = decoders.naive_greedy_decoder(Hx if Hx.size else np.zeros((0, n_data), dtype=int), sy_x)
+                eX_hat, nIterX = decoders.NG_decoder(Hz if Hz.size else np.zeros((0, n_data), dtype=int), sy_z)
+                eZ_hat, nIterZ = decoders.NG_decoder(Hx if Hx.size else np.zeros((0, n_data), dtype=int), sy_x)
             case "BF":
                 eX_hat, nIterX = decoders.BF_decoder(Hz if Hz.size else np.zeros((0, n_data), dtype=int), sy_z)
                 eZ_hat, nIterZ = decoders.BF_decoder(Hx if Hx.size else np.zeros((0, n_data), dtype=int), sy_x)
             case "MS":
-                eX_hat, nIterX = decoders.min_sum_decoder(Hz, sy_z, p=p/3, max_iter=decIterations)
-                eZ_hat, nIterZ = decoders.min_sum_decoder(Hx, sy_x, p=p/3, max_iter=decIterations)
+                eX_hat, nIterX = decoders.MS_decoder(Hz, sy_z, p=p/3, max_iter=decIterations, layers=layersX)
+                eZ_hat, nIterZ = decoders.MS_decoder(Hx, sy_x, p=p/3, max_iter=decIterations, layers=layersZ)
             case "BP":
-                eX_hat, nIterX = decoders.BP_decoder(Hz, sy_z, p=p/3, max_iter=decIterations)
-                eZ_hat, nIterZ = decoders.BP_decoder(Hx, sy_x, p=p/3, max_iter=decIterations)
+                eX_hat, nIterX = decoders.BP_decoder(Hz, sy_z, p=p/3, max_iter=decIterations, layers=layersX)
+                eZ_hat, nIterZ = decoders.BP_decoder(Hx, sy_x, p=p/3, max_iter=decIterations, layers=layersZ)
             case _:
                 raise ValueError("Unrecognized decoder type.")
                 
@@ -220,10 +243,10 @@ def simulate(Hx: np.ndarray,
         # Residuals are simply e_hat (since circuit applies error then we decode based on syndrome only)
         # Determine whether residuals anticommute with logical operators
         logical_failure = False
-        if any(Gx @ eX_hat) or any(Gz @ eZ_hat):
-                logical_failure = True
-        if logical_failure:
-            corrFailures += 1
+        # if any(Gx @ eX_hat) or any(Gz @ eZ_hat):
+        #         logical_failure = True
+        # if logical_failure:
+        #     corrFailures += 1
             
         decoder_failure = False
         if not np.array_equal(sy_z, (Hz.dot(eX_hat)) % 2):
@@ -246,14 +269,19 @@ def simulate(Hx: np.ndarray,
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Stim-based QC-LDPC depolarizing-channel simulator.")
-    parser.add_argument("--Hx", required=True, help="Path to Hx parity-check matrix (.npy or whitespace text).")
-    parser.add_argument("--Hz", required=True, help="Path to Hz parity-check matrix (.npy or whitespace text).")
-    parser.add_argument("--p", type=float, nargs='+', required=True, help="Depolarizing probability per qubit (0..1).")
+    parser.add_argument("--Hx", required=True, help="Path to Hx parity-check matrix (.npy).")
+    parser.add_argument("--Hz", required=True, help="Path to Hz parity-check matrix (.npy).")
+    parser.add_argument("--p", type=float, nargs='+', required=True, help="Depolarizing probability.")
     parser.add_argument("--shots", type=int, default=1000, help="Number of Monte Carlo shots.")
     parser.add_argument("--seed", type=int, default=None, help="RNG seed.")
-    parser.add_argument("--dectype", choices=['NG', 'BF', 'MS', 'BP'], default='MS', help="Decoder type: [NG] Naive Greedy; [MS] Min-Sum; [BP] Belief Propagation.")
-    parser.add_argument("--deciterations", type=int, default=99, help="Number of decoding iterations.")
+    parser.add_argument("--decType", choices=['NG', 'BF', 'MS', 'BP'], default='MS', \
+                        help="Decoder type: [NG] Naive Greedy; [MS] Min-Sum; [BP] Belief Propagation.")
+    parser.add_argument("--decIterations", type=int, default=99, help="Number of decoding iterations.")
+    parser.add_argument("--decSchedule", choices=['F','L','S'], default='F', \
+                        help="Decoder scheduling method: [F] flooding; [L] layered; [S] serial.")
     args = parser.parse_args(argv)
+
+    print(args)
 
     Hx = load_matrix(args.Hx)
     Hz = load_matrix(args.Hz)
@@ -262,17 +290,18 @@ def main(argv=None):
 
     results = []
     for pT in args.p:
-        res = simulate(Hx, Hz, p=pT, shots=args.shots, rng_seed=args.seed, decType=args.dectype, decIterations=args.deciterations)
+        res = simulate(Hx, Hz, p=pT, shots=args.shots, rng_seed=args.seed, \
+                       decType=args.decType, decIterations=args.decIterations, \
+                    decSchedule=args.decSchedule)
         results.append(res)
 
     
     print('\n                    ===          SIMULATION RESULTS          ===\n')
-    print('   Depolarizing probability | Decoding failures | Residual errors | Logical error rate')
-    print('----------------------------+-------------------+-----------------+---------------------')
+    print('   Depolarizing probability | Decoding failures | Average iterations (X,Z)')
+    print('----------------------------+-------------------+---------------------------')
     for i in range(len(args.p)):
         pT = args.p[i]
-        print(f'         {pT:10.2e}         |       {results[i]['DecFailures']:5}       |      {results[i]['LogicalErrors']:5}      |    {results[i]['LogicalErrors']/args.shots:10.2e}')
-    # print(f"Avg number of iterations (X,Z): ({res['Avg_number_of_iterations_X']:.2f},{res['Avg_number_of_iterations_Z']:.2f})")
+        print(f'         {pT:10.2e}         |       {results[i]['DecFailures']:5}       |      {results[i]['Avg_number_of_iterations_X']:5.2f}, {results[i]['Avg_number_of_iterations_Z']:5.2f}')
 
 
 

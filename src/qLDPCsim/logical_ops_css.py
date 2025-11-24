@@ -1,5 +1,7 @@
-# logical_ops_css.py
 """
+Copyright (c) 2025, Alberto G. Perotti
+All rights reserved.
+
 Compute logical X and Z operator bases for general CSS codes.
 
 Given parity-check matrices Hx and Hz satisfying Hx @ Hz.T = 0 mod 2,

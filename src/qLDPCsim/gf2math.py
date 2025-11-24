@@ -1,8 +1,8 @@
-# -*- coding: utf-8 -*-
 """
-Created on Sat Nov 15 13:05:51 2025
+Copyright (c) 2025, Alberto G. Perotti
+All rights reserved.
 
-@author: AlbertoGP71
+Some useful GF2 math functions.
 """
 
 import numpy as np

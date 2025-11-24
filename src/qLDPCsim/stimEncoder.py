@@ -1,5 +1,7 @@
-# -*- coding: utf-8 -*-
 """
+Copyright (c) 2025, Alberto G. Perotti
+All rights reserved.
+
 Created on Mon Nov 17 13:17:38 2025
 
 @author: AlbertoGP71

@@ -1,6 +1,7 @@
-# PCMlibrary.py
-
 """
+Copyright (c) 2025, Alberto G. Perotti
+All rights reserved.
+
 Library of Parity Check Matricx (PCM) pairs (Hx, Hz) of quantum CSS codes.
 
 - Shor (9-qubit) code [1]
@@ -101,7 +102,7 @@ def qc_ldpc_tanner_code() -> Tuple[np.ndarray, np.ndarray]:
 
 
 
-def qc_ldpc_lifted_codes(family: str = "LP04", 
+def qc_ldpc_lifted_code(family: str = "LP04", 
                          index: int = 0) -> Tuple[np.ndarray, np.ndarray]:
     """
     Return (Hx, Hz) for the quasi-cyclic lifted product (LP) LDPC codes from [4].
