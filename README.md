@@ -52,7 +52,7 @@ Note that qLDPCsim is work in progress -- code stability is not guaranteed!
 
 ## Installation
 
-Type ``pip install git+https://github.com/AlbertoGP71/qLDPCsim.git``.
+``pip install git+https://github.com/AlbertoGP71/qLDPCsim.git``.
 
 
 
@@ -60,10 +60,10 @@ Type ``pip install git+https://github.com/AlbertoGP71/qLDPCsim.git``.
 
 Generate a pair of PCMs and save them to .npy files.
 You can generate your own matrices, or you can take a pair from the library as follows: 
-- import numpy as np
-- from qLDPCsim import PCMlibrary as PCMlib
-- Hx, Hz = PCMlib.shor_code()
-- np.save('Hx', Hx); np.save('Hz', Hz)
+``import numpy as np
+from qLDPCsim import PCMlibrary as PCMlib
+Hx, Hz = PCMlib.shor_code()
+np.save('Hx', Hx); np.save('Hz', Hz)``
 
 Once the PCMs are on files, you can run the simulation as follows:
 - import qLDPCsim
