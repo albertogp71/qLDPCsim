@@ -32,13 +32,12 @@ schedules:
 2. layered (automatic layer partitioning);
 3. serial.
 
-Evaluated performance>
-1. **decoding failure rate** (separately for X and
-Z);
+Evaluated performance:
+1. **decoding failure rate** (separately for X and Z);
 2. **average number of iterations** (separately for X and Z).
 
-A decoding failure event occurs when a decoder returns an error sequence that
-does not match the corresponding syndrome.
+Decoding failure occurs when the decoder returns an error sequence that does
+not match the corresponding syndrome.
 
 
 
