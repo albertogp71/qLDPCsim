@@ -133,7 +133,7 @@ def build_stim_circuit(Hx: np.ndarray, Hz: np.ndarray, p: float) -> Tuple[stim.C
 # -----------------------------
 # Main simulation function
 # -----------------------------
-def simulate(Hx: np.ndarray,
+def simulate_p(Hx: np.ndarray,
              Hz: np.ndarray,
              p: float,
              shots: int = 1000,
@@ -255,6 +255,38 @@ def simulate(Hx: np.ndarray,
     }
 
 
+
+def simulate(HxFile: str,
+             HzFile: str,
+             p: np.ndarray,
+             shots: int = 1000,
+             decType: str = 'MS',
+             decIterations: int = 99,
+             decSchedule: str = 'F',
+             rngSeed: Optional[int] = None):
+
+    Hx = load_matrix(HxFile)
+    Hz = load_matrix(HzFile)
+    
+    assert max(p) <= 1. and min(p) >= 0.
+
+    results = []
+    for pT in p:
+        res = simulate_p(Hx, Hz, p=pT, shots=shots, rngSeed=rngSeed, \
+                         decType=decType, decIterations=decIterations, \
+                         decSchedule=decSchedule)
+        results.append(res)
+
+    
+    print('\n                    ===          SIMULATION RESULTS          ===\n')
+    print('   Depolarizing probability | Decoding failures (X,Z) | Average iterations (X,Z)')
+    print('----------------------------+-------------------------+---------------------------')
+    for i in range(len(p)):
+        pT = p[i]
+        print(f'         {pT:10.2e}         |       {results[i]['DecFailures_X']:5},{results[i]['DecFailures_Z']:5}       |      {results[i]['Avg_number_of_iterations_X']:5.2f}, {results[i]['Avg_number_of_iterations_Z']:5.2f}')
+
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Stim-based QC-LDPC depolarizing-channel simulator.")
     parser.add_argument("--Hx", required=True, help="Path to Hx parity-check matrix (.npy).")
@@ -273,27 +305,9 @@ def main(argv=None):
     print(args)
     print('')
     
-    Hx = load_matrix(args.Hx)
-    Hz = load_matrix(args.Hz)
-    
-    assert max(args.p) <= 1. and min(args.p) >= 0.
-
-    results = []
-    for pT in args.p:
-        res = simulate(Hx, Hz, p=pT, shots=args.shots, rngSeed=args.rngSeed, \
-                       decType=args.decType, decIterations=args.decIterations, \
-                    decSchedule=args.decSchedule)
-        results.append(res)
-
-    
-    print('\n                    ===          SIMULATION RESULTS          ===\n')
-    print('   Depolarizing probability | Decoding failures (X,Z) | Average iterations (X,Z)')
-    print('----------------------------+-------------------------+---------------------------')
-    for i in range(len(args.p)):
-        pT = args.p[i]
-        print(f'         {pT:10.2e}         |       {results[i]['DecFailures_X']:5},{results[i]['DecFailures_Z']:5}       |      {results[i]['Avg_number_of_iterations_X']:5.2f}, {results[i]['Avg_number_of_iterations_Z']:5.2f}')
-
-
+    simulate(HxFile=args.Hx, HzFile=args.Hz, p=args.p, shots=args.shots, 
+             decType=args.decType, decIterations=args.decIterations, 
+             decSchedule=args.decSchedule, rngSeed=args.rngSeed)
 
 
 if __name__ == "__main__":
