@@ -29,7 +29,7 @@ schedules:
 2. layered (automatic layer partitioning);
 3. serial.
 
-Evaluated performance:
+Evaluated performance indicators are the following:
 1. **decoding failure rate** (separately for X and Z);
 2. **average number of iterations** (separately for X and Z).
 
@@ -65,18 +65,30 @@ follows:
 ``Hx, Hz = PCMlib.shor_code()``  
 ``np.save('Hx', Hx); np.save('Hz', Hz)``
 
-Available PCM generators (see PCMlibrary.py) source code:  
+Available PCM generators (see PCMlibrary.py source code):  
 ``shor_code()``  
 ``steane_code()``  
 ``bicycle_code()``  
 ``qc_ldpc_tanner_code()``  
 ``qc_ldpc_lifted_code(family: "LP04" or "LP118", index: 0 to 4)``  
 
-Once the PCMs are on files ``Hx.npy`` and ``Hz.npy``, you can run a simulation 
+Once you have the PCM files ``Hx.npy`` and ``Hz.npy``, you can run a simulation 
 as follows (example, assuming iPython CLI):  
 ``from qLDPCsim import simulator``  
 ``simulator.simulate(HxFile='path/to/Hx.npy', HzFile='path/to/Hz.npy', p=[0.01,0.02,0.05,0.1], shots=1000, decType='MS', decIterations=50, decSchedule='L')``
 
 
-Thanks for your interest in qLDPCsim!
+The function simulator.simulate() takes the following input arguments:
+- HxFile : path to Hx.n py file
+- HzFile : path to Hx.n py file
+- p      : array of depolarization probabilities
+- shots  : number of shots per probability point
+- rngSeed: seed for RNG initialization
+- decType: one of 'NG' (Naive Greedy), 'BF' (Bit Flipping), 'MS' (min-sum), 'BP' (belief propagation)
+- decIterations: maximum number of decoding iterations
+- decSchedule: one of 'F' (flooding), 'L' (layered), 'S' (serial)
+
+
+
+Thanks for your interest in qLDPCsim!  
 Alberto
