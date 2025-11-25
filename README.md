@@ -78,7 +78,7 @@ Available PCM generators (see PCMlibrary.py):
 ``qc_ldpc_lifted_code(family: "LP04" or "LP118", index: 0 to 4)``  
 
 Once the PCMs are on files ``Hx.npy`` and ``Hx.npy``, you can start a 
-simulation as follows:
+simulation as follows:  
 ``import qLDPCsim``  
 ``cd qLDPCsim``  
 ``run simulate --Hx path/to/Hx.npy --Hz path/to/Hz.npy --shots 10000 --p 0.01 0.02. 0.05 0.1 --shots 1000 --decType "MS" --decIterations 50 --decSchedule "L"``
