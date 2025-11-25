@@ -69,10 +69,19 @@ follows:
 ``Hx, Hz = PCMlib.shor_code()``  
 ``np.save('Hx', Hx); np.save('Hz', Hz)``
 
-Once the PCMs are on files, you can run the simulation as follows:
-- import qLDPCsim
-- cd qLDPCsim
-- run simulate --Hx Hx.npy --Hz Hz.npy --shots 10000 --p 0.1 
+Available PCM generators (see PCMlibrary.py):  
+``shor_code()``  
+``steane_code()``  
+``bicycle_code()``  
+``qc_ldpc_tanner_code()``  
+``qc_ldpc_tanner_code()``  
+``qc_ldpc_lifted_code(family: "LP04" or "LP118", index: 0 to 4)``  
+
+Once the PCMs are on files ``Hx.npy`` and ``Hx.npy``, you can start a 
+simulation as follows:
+``import qLDPCsim``  
+``cd qLDPCsim``  
+``run simulate --Hx path/to/Hx.npy --Hz path/to/Hz.npy --shots 10000 --p 0.01 0.02. 0.05 0.1 --shots 1000 --decType "MS" --decIterations 50 --decSchedule "L"``
 
 
 Thanks for your interest in qLDPCsim!
