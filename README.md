@@ -43,7 +43,7 @@ not match the corresponding syndrome.
 
 ## Source code structure
 The source code is organized in modules:
-- **simulate**: simulation execution and error statistics evaluation.
+- **simulator**: simulation execution and performance evaluation.
 - **PCMlibrary**: a library of parity check matrix pairs (Hx, Hz).
 - **decoders**: qLDPC decoders.
 - **gf2math**: some useful GF(2) functions.
@@ -77,8 +77,8 @@ Available PCM generators (see PCMlibrary.py) source code:
 
 Once the PCMs are on files ``Hx.npy`` and ``Hx.npy``, you can run a simulation 
 as follows (example, assuming iPython CLI):  
-``import qLDPCsim``  
-``%run -m qLDPCsim.simulate --Hx path/to/Hx.npy --Hz path/to/Hz.npy --shots 10000 --p 0.01 0.02. 0.05 0.1 --shots 1000 --decType "MS" --decIterations 50 --decSchedule "L"``
+``from qLDPCsim import simulator``  
+``simulator.simulate(HxFile='path/to/Hx.npy', HzFile='path/to/Hz.npy', p=[0.01,0.02,0.05,0.1], shots=1000, decType='MS', decIterations=50, decSchedule='L'``
 
 
 Thanks for your interest in qLDPCsim!
