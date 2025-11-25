@@ -52,7 +52,7 @@ Note that qLDPCsim is work in progress -- code stability is not guaranteed!
 
 ## Installation
 
-Type 'pip install git+https://github.com/AlbertoGP71/qLDPCsim.git'.
+Type ``pip install git+https://github.com/AlbertoGP71/qLDPCsim.git``.
 
 
 
