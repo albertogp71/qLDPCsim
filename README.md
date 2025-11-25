@@ -79,8 +79,8 @@ as follows (example, assuming iPython CLI):
 
 
 The function simulator.simulate() takes the following input arguments:
-- HxFile : path to Hx.n py file
-- HzFile : path to Hx.n py file
+- HxFile : path to Hx.npy file
+- HzFile : path to Hx.npy file
 - p      : array of depolarization probabilities
 - shots  : number of shots per probability point
 - rngSeed: seed for RNG initialization
