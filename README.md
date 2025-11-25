@@ -7,7 +7,7 @@
 
 ## Description
 qLDPCsim is a simulation toolkit for quantum LDPC (CSS-type) error correction 
-codes performance evaluation by Monte Carlo simulations.
+codes aimed at performance evaluation by Monte Carlo simulations.
 
 Given a pair of parity-check matrices ${\bf H}_X$ and ${\bf H}_Z$, qLDPCsim 
 creates a [Stim](https://github.com/quantumlib/Stim) circuit that consists of
@@ -52,7 +52,7 @@ Note that qLDPCsim is work in progress -- code stability is not guaranteed!
 
 ## Installation
 
-pip install git+https://github.com/AlbertoGP71/qLDPCsim.git
+Type 'pip install git+https://github.com/AlbertoGP71/qLDPCsim.git'.
 
 
 
