@@ -21,7 +21,7 @@ The Stim circuit
 The syndromes are fed to a quantum LDPC decoder so as to obtain corresponding
 error sequences.
 Currently available decoding algorithms are:
-- Conventional __Belief-Propagation__ (BP), a.k.a sum-product;
+- Conventional __Belief-Propagation__ (BP), a.k.a. sum-product;
 - __Min-Sum__ (MS);
 - __Bit-Flipping__ (BF);
 - a naive greedy algorithm.
@@ -32,10 +32,10 @@ schedules:
 2. layered (automatic layer partitioning);
 3. serial.
 
-Performance is evaluates as decoding failure rate (separately for X and Z) and
-average number of iterations (separately for X and Z).
-Decoding failure occurs when a decoder returns an error sequence that does not
-match the corresponding syndrome.
+Evaluaed performance comprises **decoding failure rate** (separately for X and
+Z) and **average number of iterations** (separately for X and Z).
+A decoding failure event occurs when a decoder returns an error sequence that
+does not match the corresponding syndrome.
 
 
 
