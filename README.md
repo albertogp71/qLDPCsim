@@ -9,7 +9,7 @@ A quantum LDPC simulator
 qLDPCsim is a simulation toolkit for quantum LDPC (CSS-type) error correction 
 codes aimed at performance evaluation by Monte Carlo simulations.
 
-Given a pair of parity-check matrices ${\bf H}_X$ and ${\bf H}_Z$, qLDPCsim 
+Given a pair of parity-check matrices (PCM) ${\bf H}_X$ and ${\bf H}_Z$, qLDPCsim 
 creates a [Stim](https://github.com/quantumlib/Stim) circuit that consists of
 an ecoder, a depolarizing channel and a syndrome generator.
 The Stim circuit
@@ -68,19 +68,17 @@ follows:
 ``Hx, Hz = PCMlib.shor_code()``  
 ``np.save('Hx', Hx); np.save('Hz', Hz)``
 
-Available PCM generators (see PCMlibrary.py):  
+Available PCM generators (see PCMlibrary.py) source code:  
 ``shor_code()``  
 ``steane_code()``  
 ``bicycle_code()``  
 ``qc_ldpc_tanner_code()``  
-``qc_ldpc_tanner_code()``  
 ``qc_ldpc_lifted_code(family: "LP04" or "LP118", index: 0 to 4)``  
 
-Once the PCMs are on files ``Hx.npy`` and ``Hx.npy``, you can start a 
-simulation as follows:  
+Once the PCMs are on files ``Hx.npy`` and ``Hx.npy``, you can run a simulation 
+as follows (assuming iPython CLI):  
 ``import qLDPCsim``  
-``cd qLDPCsim``  
-``run simulate --Hx path/to/Hx.npy --Hz path/to/Hz.npy --shots 10000 --p 0.01 0.02. 0.05 0.1 --shots 1000 --decType "MS" --decIterations 50 --decSchedule "L"``
+``%run -m qLDPCsim.simulate --Hx path/to/Hx.npy --Hz path/to/Hz.npy --shots 10000 --p 0.01 0.02. 0.05 0.1 --shots 1000 --decType "MS" --decIterations 50 --decSchedule "L"``
 
 
 Thanks for your interest in qLDPCsim!
