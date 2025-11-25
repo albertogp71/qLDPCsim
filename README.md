@@ -1,7 +1,4 @@
-<div style="text-align: center;">
-<img src="qLDPClogo.jpg" alt="qLDPCsim logo" style="width:25%; height:auto;"> <br>
-A quantum LDPC simulator
-</div>
+<img src="qLDPClogo.jpg" alt="qLDPCsim logo" style="width:25%; height:auto;">
 
 ***
 
