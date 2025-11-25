@@ -2,7 +2,7 @@
 Copyright (c) 2025, Alberto G. Perotti
 All rights reserved.
 
-User callable function .
+Main simulation logic.
 
 """
 
@@ -15,7 +15,7 @@ from typing import Tuple, Optional
 
 
 # -----------------------------
-# I/O helper functions
+# Load matrices
 # -----------------------------
 def load_matrix(path: str) -> np.ndarray:
     """Load a binary matrix from .npy or whitespace text."""
@@ -140,7 +140,7 @@ def simulate(Hx: np.ndarray,
              decType: str = 'MS',
              decIterations: int = 99,
              decSchedule: str = 'F',
-             rng_seed: Optional[int] = None) -> dict:
+             rngSeed: Optional[int] = None) -> dict:
     """
     Build the stim circuit, run shots, and (optionally) do naive decoding to estimate
     logical error rate.
@@ -151,31 +151,27 @@ def simulate(Hx: np.ndarray,
       - 'syndrome_counts' : histogram dict mapping syndrome bitstrings to counts (only if shots small)
       - 'logical_error_rate' : estimated if logical ops provided (else None)
     """
-    if rng_seed is not None:
-        np.random.seed(rng_seed)
+
+    if rngSeed is not None:
+        np.random.seed(rngSeed)
 
 
-    print('Preparation: building Stim circuit...', end='', flush=True)
+    print(f'(p={p:5.2e}) Preparation: building Stim circuit...', end='', flush=True)
     circ, n_data, n_meas, anc_start = build_stim_circuit(Hx, Hz, p)
     # print(circ.diagram())
 
     print('sampling circuit...', end='', flush=True)
     sampler = circ.compile_sampler()
     samples = sampler.sample(shots=shots)
-    # breakpoint()
-    print('generating logical operators...', end='', flush=True)
-    # logical_X_ops, logical_Z_ops = logical_ops_from_checks.logical_ops_from_css(Hx, Hz)
-    # Gz = gf2math.nullSpace(Hx)
-    # Gx = gf2math.nullSpace(Hz)
 
-    # Gz = logical_ops_from_checks.remove_dependents(Gz, Hz)
-    # Gx = logical_ops_from_checks.remove_dependents(Gx, Hx)
     print('done.', end='', flush=True)
 
 
 
     m_z = Hz.shape[0] if Hz.size else 0
     m_x = Hx.shape[0] if Hx.size else 0
+
+
 
     def layerize(H:np.ndarray, serial:bool = False):
         layers = []
@@ -191,6 +187,8 @@ def simulate(Hx: np.ndarray,
         layers.append(np.arange(mDn,mUp-1))
         return layers
 
+
+
     match decSchedule:
         case "F":
             layersX = [np.arange(m_x)]
@@ -201,12 +199,12 @@ def simulate(Hx: np.ndarray,
         case _:
             raise ValueError("Unrecognized decoder scheduling option.")
         
-    corrFailures = 0
-    decFailures = 0
+    decFailuresX = 0
+    decFailuresZ = 0
     nIterAccX = 0
     nIterAccZ = 0
     for shot_idx in range(shots):
-        print(f'\rDecoding block n. {shot_idx+1:3}/{shots:4}...', end='', flush=True)
+        print(f'\r(p={p:5.2e}) Decoding block n. {shot_idx+1:3}/{shots:4}...', end='', flush=True)
         row = samples[shot_idx]
 
         # Syndromes
@@ -240,28 +238,18 @@ def simulate(Hx: np.ndarray,
         nIterAccZ += nIterZ
 
 
-        # Residuals are simply e_hat (since circuit applies error then we decode based on syndrome only)
-        # Determine whether residuals anticommute with logical operators
-        logical_failure = False
-        # if any(Gx @ eX_hat) or any(Gz @ eZ_hat):
-        #         logical_failure = True
-        # if logical_failure:
-        #     corrFailures += 1
-            
-        decoder_failure = False
+           
         if not np.array_equal(sy_z, (Hz.dot(eX_hat)) % 2):
-            decoder_failure = True
+            decFailuresX +=1
         if not np.array_equal(sy_x, (Hx.dot(eZ_hat)) % 2):
-            decoder_failure = True
-        if decoder_failure:
-            decFailures +=1
-        print(f'N. iterations (X, Z): {nIterX:2},{nIterZ:2}, Dec. failure rate: {decFailures/(shot_idx+1):.2e}             ', end='', flush=True)
+            decFailuresZ +=1
+        print(f'N. iterations (X,Z): {nIterX:2},{nIterZ:2}; Dec. failure rates (X,Z): {decFailuresX/(shot_idx+1):.2e}, {decFailuresZ/(shot_idx+1):.2e} ', end='', flush=True)
         
     print()
 
     return {
-        "LogicalErrors": corrFailures,
-        "DecFailures": decFailures,
+        "DecFailures_X": decFailuresX,
+        "DecFailures_Z": decFailuresZ,
         "Avg_number_of_iterations_X": nIterAccX/float(shots),
         "Avg_number_of_iterations_Z": nIterAccZ/float(shots)
     }
@@ -273,7 +261,7 @@ def main(argv=None):
     parser.add_argument("--Hz", required=True, help="Path to Hz parity-check matrix (.npy).")
     parser.add_argument("--p", type=float, nargs='+', required=True, help="Depolarizing probability.")
     parser.add_argument("--shots", type=int, default=1000, help="Number of Monte Carlo shots.")
-    parser.add_argument("--seed", type=int, default=None, help="RNG seed.")
+    parser.add_argument("--rngSeed", type=int, default=None, help="RNG seed.")
     parser.add_argument("--decType", choices=['NG', 'BF', 'MS', 'BP'], default='MS', \
                         help="Decoder type: [NG] Naive Greedy; [MS] Min-Sum; [BP] Belief Propagation.")
     parser.add_argument("--decIterations", type=int, default=99, help="Number of decoding iterations.")
@@ -281,8 +269,10 @@ def main(argv=None):
                         help="Decoder scheduling method: [F] flooding; [L] layered; [S] serial.")
     args = parser.parse_args(argv)
 
+    print('\n   Command line arguments:')
     print(args)
-
+    print('')
+    
     Hx = load_matrix(args.Hx)
     Hz = load_matrix(args.Hz)
     
@@ -290,18 +280,18 @@ def main(argv=None):
 
     results = []
     for pT in args.p:
-        res = simulate(Hx, Hz, p=pT, shots=args.shots, rng_seed=args.seed, \
+        res = simulate(Hx, Hz, p=pT, shots=args.shots, rngSeed=args.rngSeed, \
                        decType=args.decType, decIterations=args.decIterations, \
                     decSchedule=args.decSchedule)
         results.append(res)
 
     
     print('\n                    ===          SIMULATION RESULTS          ===\n')
-    print('   Depolarizing probability | Decoding failures | Average iterations (X,Z)')
-    print('----------------------------+-------------------+---------------------------')
+    print('   Depolarizing probability | Decoding failures (X,Z) | Average iterations (X,Z)')
+    print('----------------------------+-------------------------+---------------------------')
     for i in range(len(args.p)):
         pT = args.p[i]
-        print(f'         {pT:10.2e}         |       {results[i]['DecFailures']:5}       |      {results[i]['Avg_number_of_iterations_X']:5.2f}, {results[i]['Avg_number_of_iterations_Z']:5.2f}')
+        print(f'         {pT:10.2e}         |       {results[i]['DecFailures_X']:5},{results[i]['DecFailures_Z']:5}       |      {results[i]['Avg_number_of_iterations_X']:5.2f}, {results[i]['Avg_number_of_iterations_Z']:5.2f}')
 
 
 

@@ -51,73 +51,12 @@ def nullSpace(A: np.ndarray) -> np.ndarray:
 
 
 
-def nullSpaceBasis(A: np.ndarray) -> np.ndarray:
-    """
-    Return a basis (rows) for the nullspace of binary matrix A over GF(2).
-    That is, returns matrix N whose rows span { x | A x^T = 0 }.
-    Implementation: perform Gaussian elimination and read off free variables.
-    """
-    A = (np.asarray(A, dtype=np.uint8) & 1).copy()
-    m, n = A.shape
-    # Augment A with identity-less tracking for pivots
-    B = A.copy()
-    pivot_cols = [-1] * m
-    r = 0
-    for c in range(n):
-        pivot = None
-        for i in range(r, m):
-            if B[i, c]:
-                pivot = i
-                break
-        if pivot is None:
-            continue
-        if pivot != r:
-            B[[r, pivot]] = B[[pivot, r]]
-        pivot_cols[r] = c
-        # eliminate other rows
-        for i in range(m):
-            if i != r and B[i, c]:
-                B[i] ^= B[r]
-        r += 1
-        if r == m:
-            break
-    # pivot_cols[0:r] are pivot columns; others are free
-    pivots = pivot_cols[:r]
-    pivot_set = set(pivots)
-    free_cols = [c for c in range(n) if c not in pivot_set]
-    if len(free_cols) == 0:
-        # only trivial nullspace
-        return np.zeros((0, n), dtype=np.uint8)
-    # For each free column f, build a nullspace vector x with x[f]=1
-    # and pivot variables set to satisfy B_pivots * x = 0.
-    basis = []
-    for f in free_cols:
-        x = np.zeros(n, dtype=np.uint8)
-        x[f] = 1
-        # For each pivot row i, pivot column p = pivots[i], enforce row equation:
-        # B[i] dot x = 0 -> x[p] = sum_{j != p} B[i,j] * x[j]
-        for i in range(r):
-            p = pivots[i]
-            # compute dot of row i with x excluding column p
-            s = 0
-            # iterate all columns j where B[i,j]==1 except p
-            # (B[i] is sparse in many codes — but here we loop)
-            row_indices = np.nonzero(B[i])[0]
-            for j in row_indices:
-                if j == p:
-                    continue
-                if x[j]:
-                    s ^= 1
-            x[p] = s
-        basis.append(x)
-    if len(basis) == 0:
-        return np.zeros((0, n), dtype=np.uint8)
-    return np.vstack(basis).astype(np.uint8)
+
 
 
 def rowBasis(M: np.ndarray) -> np.ndarray:
     """
-    Return an array whose rows form a basis of the row space of M.
+    Return an array whose rows form a basis of the row space of matrix M.
     Zero rows and dependent rows are removed. 
     Order is row-echelon.
     """
@@ -194,29 +133,6 @@ def rank(A: np.ndarray) -> int:
             break
 
     return Arank
-
-
-
-def rowBasisMinChange(M: np.ndarray) -> np.ndarray:
-    """
-    Return an array whose rows form a basis of the row space of M.
-    
-    Zero rows and dependent rows are removed. 
-    Order is row-echelon.
-    """
-    A = (np.asarray(M, dtype=np.uint8) & 1).copy()
-    m, n = A.shape
-    Aout = np.zeros_like(A)
-    Aout[0,:] = A[0,:]
-    rWrite = 1
-    for r in range(1,m):
-        Aout[rWrite,:] = A[r,:]
-        if rank(Aout) == r+1:
-            rWrite += 1
-            
-    return Aout[:rWrite,:].copy()
-
-
 
 
 

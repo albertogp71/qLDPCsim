@@ -5,22 +5,38 @@
 
 ***
 
-## Brief description
-qLDPCsim is a simulation toolkit for quantum LDPC (CSS-type) error correction codes focused on decoding algorithms.
-qLDPCsim creates a [Stim](https://github.com/quantumlib/Stim) circuit based on a pair of parity check matrices ${\bf H}_X$, ${\bf H}_Z$.
+## Description
+qLDPCsim is a simulation toolkit for quantum LDPC (CSS-type) error correction 
+codes performance evaluation by Monte Carlo simulations.
+
+Given a pair of parity-check matrices ${\bf H}_X$ and ${\bf H}_Z$, qLDPCsim 
+creates a [Stim](https://github.com/quantumlib/Stim) circuit that consists of
+an ecoder, a depolarizing channel and a syndrome generator.
 The Stim circuit
-- generates a sequence of random logical qubits
-- encodes the logical qubits to physical qubits
-- simulates a depolarizing channel
-- generates a pair of syndromes.
+- generates a sequence of $k$ random logical qubits;
+- encodes the logical qubits into $n$ physical qubits;
+- simulates depolarization on the $n$ physical qubits;
+- determines the bit-flip and phase-flip syndromes.
 
-The syndromes are processed by the quantum LDPC decoder so as to obtain corresponding error sequences to be used for correction.
+The syndromes are fed to a quantum LDPC decoder so as to obtain corresponding
+error sequences.
 Currently available decoding algorithms are:
-- conventional iterative belief-propagation
-- the iterative sum-product algorithm
-- the bit-flipping algorithm
+- Conventional __Belief-Propagation__ (BP), a.k.a sum-product;
+- __Min-Sum__ (MS);
+- __Bit-Flipping__ (BF);
+- a naive greedy algorithm.
 
-More decoders will be available - stay tuned!!
+BP and MS decoders operate according to one of the following check-node update
+schedules:
+1. flooding;
+2. layered (automatic layer partitioning);
+3. serial.
+
+Performance is evaluates as decoding failure rate (separately for X and Z) and
+average number of iterations (separately for X and Z).
+Decoding failure occurs when a decoder returns an error sequence that does not
+match the corresponding syndrome.
+
 
 
 ## Source code structure
@@ -28,9 +44,10 @@ The source code is organized in modules:
 - **simulate**: simulation execution and error statistics evaluation.
 - **PCMlibrary**: a library of parity check matrix pairs (Hx, Hz).
 - **decoders**: qLDPC decoders.
-- **logical_ops_from_checks**: generation of logical ops for detecting failures.
+- **gf2math**: some useful GF(2) functions.
 
-Please be aware that qLDPCsim is at an initial development stage -- code stability is not guaranteed!
+Note that qLDPCsim is work in progress -- code stability is not guaranteed!
+
 
 
 ## Installation
@@ -38,20 +55,21 @@ Please be aware that qLDPCsim is at an initial development stage -- code stabili
 pip install git+https://github.com/AlbertoGP71/qLDPCsim.git
 
 
+
 ## Usage
 
 Generate a pair of PCMs and save them to .npy files.
 You can generate your own matrices, or you can take a pair from the library as follows: 
-- In [?]: import numpy as np
-- In [?]: from qLDPCsim import PCMlibrary as PCMlib
-- In [?]: Hx, Hz = PCMlib.shor_code()
-- In [?]: np.save('Hx', Hx); np.save('Hz', Hz)
+- import numpy as np
+- from qLDPCsim import PCMlibrary as PCMlib
+- Hx, Hz = PCMlib.shor_code()
+- np.save('Hx', Hx); np.save('Hz', Hz)
 
 Once the PCMs are on files, you can run the simulation as follows:
-- In [?]: import qLDPCsim
-- In [?]: cd qLDPCsim
-- In [?]: run simulate --Hx Hx.npy --Hz Hz.npy --shots 10000 --p 0.1 
+- import qLDPCsim
+- cd qLDPCsim
+- run simulate --Hx Hx.npy --Hz Hz.npy --shots 10000 --p 0.1 
 
 
-Thanks for your interest in !
+Thanks for your interest in qLDPCsim!
 Alberto

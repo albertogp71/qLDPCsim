@@ -6,7 +6,8 @@ Library of Parity Check Matricx (PCM) pairs (Hx, Hz) of quantum CSS codes.
 
 - Shor (9-qubit) code [1]
 - Steane (7-qubit) code [2]
-- Laflamme (5-qubit) code [3]
+- Bicycle code
+- QC-LDPC Tanner code [4]
 - QC-LDPC lifted codes from [4].
 
 REFERENCES
@@ -15,6 +16,7 @@ REFERENCES
 [3] https://arxiv.org/abs/quant-ph/9602019
 [4] Quantum 6, 767 (2022).
 [5] DOI: 10.1109/TIT.2004.838370.
+[6] https://arxiv.org/pdf/quant-ph/0304161
 """
 
 import numpy as np
@@ -23,8 +25,8 @@ from typing import Tuple
 def shor_code() -> Tuple[np.ndarray, np.ndarray]:
     """
     Return (Hx, Hz) parity-check matrices for the 9-qubit Shor code (CSS).
-    The Shor code is constructed by concatenating three 3-qubit repetition codes
-    in both Z and X bases.
+    The Shor code is constructed by concatenating three 3-qubit repetition 
+    codes in both Z and X bases.
     """
 
     # Z-checks (detect X errors) — three intra-block parity checks:
@@ -49,15 +51,29 @@ def shor_code() -> Tuple[np.ndarray, np.ndarray]:
 def steane_code() -> Tuple[np.ndarray, np.ndarray]:
     """
     Return (Hx, Hz) for the [[7,1,3]] Steane code.
-
     """
     H = np.array([
         [1,0,0,1,0,1,1],
         [0,1,0,1,1,0,1],
         [0,0,1,0,1,1,1]], dtype=int)
-    # In the usual CSS form, Hx checks Z errors, Hz checks X errors:
+
     Hx = H.copy()
     Hz = H.copy()
+    return Hx, Hz
+
+
+
+def bicycle_code() -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Return (Hx, Hz) for the bicycle code.
+    """
+    c = np.zeros((1,73))
+    c[0,[2,8,15,19,20,34,42,44,72]] = 1     # From [6], Figure 9. The indices form
+                                            # a perfect difference set of size 73.
+    C = np.concatenate([np.roll(c,i,axis=1) for i in range(c.shape[1])], axis=0)
+    H0 = np.concatenate([C, C.transpose()], axis=1)
+    Hx = H0.copy()
+    Hz = H0.copy()
     return Hx, Hz
 
 
@@ -65,9 +81,8 @@ def steane_code() -> Tuple[np.ndarray, np.ndarray]:
 def qc_ldpc_tanner_code() -> Tuple[np.ndarray, np.ndarray]:
     """
     Return (Hx, Hz) for the quasi-cyclic Tanner LDPC code from [5].
-
     Returns:
-        Hx, Hz : binary parity-check matrices after lifting
+        Hx, Hz : binary parity-check matrices.
     """
 
     def expand_base(B: np.ndarray, L: int) -> np.ndarray:
@@ -108,7 +123,7 @@ def qc_ldpc_lifted_code(family: str = "LP04",
     Return (Hx, Hz) for the quasi-cyclic lifted product (LP) LDPC codes from [4].
 
     Returns:
-        Hx, Hz : binary parity-check matrices after lifting
+        Hx, Hz : binary parity-check matrices.
     """
 
     def expand_base(B: np.ndarray, L: int) -> np.ndarray:
@@ -188,9 +203,8 @@ def qc_ldpc_lifted_code(family: str = "LP04",
     return Hx, Hz
 
 
-# --- If run as script, print the shapes as a quick check ---
 if __name__ == "__main__":
     print("Shor code Hx, Hz shapes:", shor_code()[0].shape, shor_code()[1].shape)
     print("Steane code Hx, Hz shapes:", steane_code()[0].shape, steane_code()[1].shape)
-    Hx_l, Hz_l = qc_ldpc_lifted_code()
-    print("QC-LDPC lifted Hx, Hz shapes:", Hx_l.shape, Hz_l.shape)
+    Hx, Hz = qc_ldpc_lifted_code()
+    print("QC-LDPC lifted Hx, Hz shapes:", Hx.shape, Hz.shape)

@@ -9,7 +9,7 @@ Iterative decoders also return the number of iterations.
 
 REFERENCES
 [1] https://doi.org/10.48550/arXiv.2205.02341
-[2] (Any paper with BP)
+[2] David J. C. MacKay, Information Theory, Inference, and Learning Algorithms
 [3] Vasic et al., Collective Bit-Flipping...
 """
 
@@ -17,9 +17,9 @@ import numpy as np
 
 
 
-# -----------------------------
+# ---------------------------------------------------------------------
 # Simple naive greedy (NG) decoder
-# -----------------------------
+# ---------------------------------------------------------------------
 def NG_decoder(H: np.ndarray, syndrome: np.ndarray) -> np.ndarray:
     """
     A very simple greedy decoder: repeatedly pick a variable node connected to 
@@ -170,7 +170,7 @@ def MS_decoder(H: np.ndarray, syndrome: np.ndarray, p: float, max_iter: int = 99
 
 
 # ---------------------------------------------------------------------
-# Belief Propagation (BP) decoder
+# Belief Propagation (BP) decoder [2]
 # ---------------------------------------------------------------------
 def BP_decoder(H: np.ndarray, syndrome: np.ndarray, p: float, max_iter: int = 99, \
                layers: list = None, eps: float = 1e-9) -> np.ndarray:
@@ -225,7 +225,7 @@ def BP_decoder(H: np.ndarray, syndrome: np.ndarray, p: float, max_iter: int = 99
 
     for n_iter in range(max_iter):
         for l in range(len(layers)):
-            # ---- Check update (vectorized via per-check groups) ----
+            # Check node update
             for i in layers[l]:
                 edges = edges_for_check[i]
                 if len(edges) == 0:
@@ -234,14 +234,14 @@ def BP_decoder(H: np.ndarray, syndrome: np.ndarray, p: float, max_iter: int = 99
                 prod = np.prod(np.tanh(msgs / 2.0))
                 for e in edges:
                     th2 = prod / np.tanh(msg_v2c[e] / 2.0)
-                    if np.abs(th2) == 1:
+                    if np.abs(th2) >= 1-eps:
                         th2 = th2 - eps * np.sign(th2)
                     val = 2 * np.arctanh(th2)
                     if syndrome[i]:
                         val = -val
                     msg_c2v[e] = val
     
-            # ---- Variable update ----
+            # Variable node update
             for j in range(n):
                 edges = edges_for_var[j]
                 if len(edges) == 0:
@@ -249,7 +249,6 @@ def BP_decoder(H: np.ndarray, syndrome: np.ndarray, p: float, max_iter: int = 99
                 total = L0 + np.sum(msg_c2v[edges]) - msg_c2v[edges]
                 msg_v2c[edges] = total
     
-            # ---- Posterior beliefs ----
             L_post = np.zeros(n)
             for j in range(n):
                 edges = edges_for_var[j]
@@ -260,7 +259,7 @@ def BP_decoder(H: np.ndarray, syndrome: np.ndarray, p: float, max_iter: int = 99
     
             e_hat = (L_post < 0).astype(int)
     
-            # Check syndrome satisfaction
+            # Stop iterating if found error and syndrome match through H
             syn_est = (H @ e_hat) % 2
             if np.all(syn_est == syndrome):
                 return e_hat, n_iter+1
