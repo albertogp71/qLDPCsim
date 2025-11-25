@@ -78,7 +78,7 @@ Available PCM generators (see PCMlibrary.py) source code:
 Once the PCMs are on files ``Hx.npy`` and ``Hx.npy``, you can run a simulation 
 as follows (example, assuming iPython CLI):  
 ``from qLDPCsim import simulator``  
-``simulator.simulate(HxFile='path/to/Hx.npy', HzFile='path/to/Hz.npy', p=[0.01,0.02,0.05,0.1], shots=1000, decType='MS', decIterations=50, decSchedule='L'``
+``simulator.simulate(HxFile='path/to/Hx.npy', HzFile='path/to/Hz.npy', p=[0.01,0.02,0.05,0.1], shots=1000, decType='MS', decIterations=50, decSchedule='L')``
 
 
 Thanks for your interest in qLDPCsim!
