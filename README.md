@@ -21,8 +21,8 @@ The Stim circuit
 The syndromes are fed to a quantum LDPC decoder so as to obtain corresponding
 error sequences.
 Currently available decoding algorithms are:
-- Conventional __Belief-Propagation__ (BP), a.k.a. sum-product;
-- __Min-Sum__ (MS);
+- conventional __Belief-Propagation__ (BP), a.k.a. sum-product;
+- normalized __Min-Sum__ (MS);
 - __Bit-Flipping__ (BF);
 - a naive greedy algorithm.
 
