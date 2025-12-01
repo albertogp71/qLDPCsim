@@ -16,9 +16,9 @@ Performance is evaluated by counting the following decoding events:
 the true channel error;
 - __Successful decoding with degenerate error__: the difference between the
 true channel error and the estimated error belongs to the stabilizer group;
-- __Decoder failure__: the estimated error yields a different syndrome;
 - __Logical error__: the difference between the true channel error and the
-estimated error belongs to the normalizer group but is not a stabilizer.
+estimated error is not a stabilizer but belongs to the normalizer group;
+- __Decoder failure__: the estimated error yields a different syndrome.
 
 
 qLDPCsim generates a [Stim](https://github.com/quantumlib/Stim) circuit that 
@@ -28,25 +28,26 @@ The Stim circuit
 - encodes the logical qubits into $n$ physical qubits;
 - simulates depolarization on the $n$ physical qubits;
 - determines the bit-flip and phase-flip syndromes;
-- records the true X and Z errors introduced by the channel.
+- records the true X and Z errors that the channel introduced.
 
 The syndromes are fed to a quantum LDPC decoder so as to obtain estimates of 
 corresponding error sequences.
 Currently available decoding algorithms are:
-- conventional __Belief-Propagation__ (BP), a.k.a. sum-product;
-- normalized __Min-Sum__ (MS);
-- __Bit-Flipping__ (BF);
-- a naive greedy algorithm.
+- the conventional __Belief-Propagation__ (BP) algorithm, a.k.a. sum-product;
+- the __Min-Sum__ (MS) algorithm with check node message normalization;
+- the __Bit-Flipping__ (BF) algorithm;
+- a naive greedy algorithm that flips valiables having largest number of 
+unsatisied checks.
 
-BP and MS decoders operate according to one of the following check-node update
+BP and MS decoders may operate according to one of the following check-node update
 schedules:
 1. flooding;
 2. layered (automatic layer partitioning);
 3. serial.
 
-__[New in v0.2]___ BP and MS decoders can be configured to perform an optional
-Ordered Statistics Decoding (OSD) post-decoding step.
-Currently, only order 0 OSD is implemented.
+*[New in v0.2]* BP and MS decoders may perform an optional __Ordered
+Statistics Decoding__ (OSD) post-decoding step.
+Currently, only order-0 OSD is implemented.
 
 Evaluated performance indicators are the following:
 1. **quantum block (qBlock) error rate**. Ratio of quantum  block errors
