@@ -44,10 +44,10 @@ BP and MS decoders may operate according to one of the following message update
 schedules:
 1. __flooding__: first update all check-to-variable messages, then update all
 varible-to-check messages;
-2. __layered__: check nodes are divided in layers; two check nodes can stay in 
-the same layer only if they do not have any adjacent variable nodes in common.
+2. __layered__: check nodes are partitioned into layers; two check nodes that 
+belong to the same layer do not have any adjacent variable nodes in common.
 Layered BP updates all check-to-variable messages in a layer, then updates 
-all the variable-to-check messages before proceeding to another layer.
+all the variable-to-check messages before processing another layer.
 3. __serial__: a variant of the layered schedule where each layer contains one 
 check node.
 
@@ -117,7 +117,7 @@ The function simulator.simulate() takes the following input arguments:
 
 
 Thanks for your interest in qLDPCsim!  
-Alberto
+Alberto  
 albertogp71.github@gmail.com
 
 
