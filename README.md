@@ -7,14 +7,15 @@ qLDPCsim is a simulation toolkit for quantum LDPC (CSS-type) error correction
 codes aimed at performance evaluation by Monte Carlo simulations.
 
 Given a pair of parity-check matrices (PCM) ${\bf H}_X$ and ${\bf H}_Z$,
-qLDPCsim evaluates the true quantum block (qBlock) error rate (qBLER) by
-performing repeated encodings of $k$ logical qbits into $n$ physical qbits,
-simulating physical qbit depolarization, and decoding the depolarized qbits.
+qLDPCsim estimates the quantum block (qBlock) error rate (qBLER) by
+performing repeated encodings of $k$ randmoly generated logical qbits into $n$
+physical qbits, simulating physical qbit depolarization, and decoding the
+depolarized qbits.
 
-Performance is evaluated by counting the following decoding events:  
-- __Successful decoding with perfect match__: the estimated error is equal to 
-the true channel error;
-- __Successful decoding with degenerate error__: the difference between the
+The performance is evaluated by counting the following decoding events:  
+- __Successful decoding, perfect match__: the estimated error produced by
+the decoder is equal to the true channel error;
+- __Successful decoding, degenerate error__: the difference between the
 true channel error and the estimated error belongs to the stabilizer group;
 - __Logical error__: the difference between the true channel error and the
 estimated error is not a stabilizer but belongs to the normalizer group;
@@ -36,27 +37,28 @@ Currently available decoding algorithms are:
 - the conventional __Belief-Propagation__ (BP) algorithm, a.k.a. sum-product;
 - the __Min-Sum__ (MS) algorithm with check node message normalization;
 - the __Bit-Flipping__ (BF) algorithm;
-- a naive greedy algorithm that flips valiables having largest number of 
+- a naive greedy (NG) algorithm that flips valiables having largest number of 
 unsatisfied checks.
 
-BP and MS decoders may operate according to one of the following check-node update
+BP and MS decoders may operate according to one of the following message update
 schedules:
 1. __flooding__: first update all check-to-variable messages, then update all
 varible-to-check messages;
 2. __layered__: check nodes are divided in layers; two check nodes can stay in 
 the same layer only if they do not have any adjacent variable nodes in common.
 Layered BP updates all check-to-variable messages in a layer, then updates 
-all the variable-to-check messages before proceeding with another layer.
-3. __serial__: same as layered, where each layer contains one check node.
+all the variable-to-check messages before proceeding to another layer.
+3. __serial__: a variant of the layered schedule where each layer contains one 
+check node.
 
 *[New in v0.2]* BP and MS decoders may perform an optional __Ordered
-Statistics Decoding__ (OSD) post-decoding step.
+Statistics Decoding__ (OSD) decoding step after BP or MS iterations.
 Currently, only order-0 OSD is implemented.
 
 Evaluated performance indicators are the following:
 1. **quantum block (qBlock) error rate**. Ratio of quantum  block errors
 (decoder failures + logical errors). 
-2. **decoding failures** (separately for X and Z). Number of times the decoders 
+2. **decoding failures count** (separately for X and Z). Number of times the decoders 
 failed to produce an error sequence that yields the given syndrome.
 3. **average number of iterations** (separately for X and Z).
 
