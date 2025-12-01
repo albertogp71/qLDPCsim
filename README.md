@@ -53,7 +53,6 @@ check node.
 
 *[New in v0.2]* BP and MS decoders may perform an optional __Ordered
 Statistics Decoding__ (OSD) decoding step after BP or MS iterations.
-Currently, only order-0 OSD is implemented.
 
 Evaluated performance indicators are the following:
 1. **quantum block (qBlock) error rate**. Ratio of quantum  block errors

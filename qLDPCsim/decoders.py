@@ -343,13 +343,28 @@ def OSDdec(H: np.ndarray,                   # Parity-check matrix
     
     infoSet = list(set(range(H.shape[1])) - set(complInfoSet))
     e_hat_perm = e_hat[perm]
-    sI = Hp[:,infoSet] @ e_hat_perm[infoSet]
-    sJ = (syndrome + sI) % 2
     
-    HpJE, T = gf2math.REF(Hp[:,complInfoSet], reduced=True)
-    
-    eJx = (T@sJ)%2
-    e_hat_perm[complInfoSet] = eJx[:len(complInfoSet)]
-    e_hat[perm] = e_hat_perm
+    for w in range(2**order):
+        e_hat_perm_tmp = e_hat_perm
+        bitFlipPattern = np.array([(w >> bit) & 1 for bit in range(len(infoSet))])
+        e_hat_perm_tmp[infoSet] ^= bitFlipPattern
+
+        sI = Hp[:,infoSet] @ (e_hat_perm_tmp[infoSet])
+        sJ = (syndrome + sI) % 2
+        
+        HpJE, T = gf2math.REF(Hp[:,complInfoSet], reduced=True)
+        
+        eJx = (T@sJ)%2
+        e_hat_perm_tmp[complInfoSet] = eJx[:len(complInfoSet)]
+        if w == 0:
+            wMin = np.count_nonzero(e_hat_perm_tmp)
+            e_hat_perm_minW = e_hat_perm_tmp
+        else:
+            wErr = np.count_nonzero(e_hat_perm_tmp)
+            if wMin > wErr:
+                wMin = wErr
+                e_hat_perm_minW = e_hat_perm_tmp
+
+    e_hat[perm] = e_hat_perm_minW
 
     return e_hat
