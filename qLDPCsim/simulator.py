@@ -332,8 +332,8 @@ def simulate(HxFile: str,               # The X parity check matrix .npy file
     assert max(p) <= 1. and min(p) >= 0.
 
     if OSDorder > 0:
-        print('WARNING: OSD orders larger than 0 are currently not supported. \
-              Continuing simulation with OSD order = 0.')
+        print('WARNING: OSD orders larger than 0 are currently not supported. ', end='')
+        print('Continuing simulation with OSD order = 0.\n')
         OSDorder = 0
 
     results = []

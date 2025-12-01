@@ -8,7 +8,7 @@ codes aimed at performance evaluation by Monte Carlo simulations.
 
 Given a pair of parity-check matrices (PCM) ${\bf H}_X$ and ${\bf H}_Z$,
 qLDPCsim estimates the quantum block (qBlock) error rate (qBLER) by
-performing repeated encodings of $k$ randmoly generated logical qbits into $n$
+performing repeated encodings of $k$ randomly generated logical qbits into $n$
 physical qbits, simulating physical qbit depolarization, and decoding the
 depolarized qbits.
 
@@ -120,3 +120,5 @@ The function simulator.simulate() takes the following input arguments:
 Thanks for your interest in qLDPCsim!  
 Alberto
 albertogp71.github@gmail.com
+
+

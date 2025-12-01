@@ -177,7 +177,7 @@ def MS_decoder(H: np.ndarray,           # Parity-check matrix
             msg_v2c = np.where(H == 1, posteriorLLRs - msg_c2v, 0.0)
 
     if OSDorder >= 0:
-        e_hat = OSDdec(H, posteriorLLRs, OSDorder)
+        e_hat = OSDdec(H, e_hat, syndrome, posteriorLLRs, OSDorder)
 
     return e_hat, max_iter
 
@@ -285,15 +285,20 @@ def BP_decoder(H: np.ndarray,               # Parity-check matrix
                 return e_hat, n_iter+1
 
     if OSDorder >= 0:
-        e_hat = OSDdec(H, L_post, OSDorder)
+        e_hat = OSDdec(H, e_hat, syndrome, L_post, OSDorder)
         
     return e_hat, max_iter
+
+
+
 
 
 # ---------------------------------------------------------------------
 # Ordered Statistics Decoding post-decoder [4]
 # ---------------------------------------------------------------------
 def OSDdec(H: np.ndarray,                   # Parity-check matrix
+           e_hat: np.ndarray,               # Initial error sequence estimate
+           syndrome: np.ndarray,            # Syndrome
            posteriorLLRs: np.ndarray,       # Posterior probability LLRs
            order: int = 0                   # OSD order.
            ) -> np.ndarray:
@@ -303,6 +308,8 @@ def OSDdec(H: np.ndarray,                   # Parity-check matrix
 
     Args:
         H : (m, n) binary matrix
+        e_hat: initial error sequence estimate
+        syndrome: syndrome
         posteriorLLRs: posterior probability LLRs
         order : order of OSD post-decoder (-1 = disable)
     Returns:
@@ -345,3 +352,4 @@ def OSDdec(H: np.ndarray,                   # Parity-check matrix
     e_hat_perm[complInfoSet] = eJx[:len(complInfoSet)]
     e_hat[perm] = e_hat_perm
 
+    return e_hat
