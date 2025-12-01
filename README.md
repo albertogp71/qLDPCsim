@@ -11,7 +11,7 @@ qLDPCsim evaluates the true quantum block (qBlock) error rate (qBLER) by
 performing repeated encodings of $k$ logical qbits into $n$ physical qbits,
 simulating physical qbit depolarization, and decoding the depolarized qbits.
 
-Performance is evaluated by counting the following decoding events:
+Performance is evaluated by counting the following decoding events:  
 . __Successful decoding with perfect match__: the estimated error is equal to 
 the true channel error;
 . __Successful decoding with degenerate error__: the difference between the
@@ -49,13 +49,12 @@ Ordered Statistics Decoding (OSD) post-decoding step.
 Currently, only order 0 OSD is implemented.
 
 Evaluated performance indicators are the following:
-1. **quantum block (qBlock) error rate**. Ratio of uncorrected block errors. 
-2. **decoding failures** (separately for X and Z). Number of times the decoders
-failed to produce an error sequence 
+1. **quantum block (qBlock) error rate**. Ratio of quantum  block errors
+(decoder failures + logical errors). 
+2. **decoding failures** (separately for X and Z). Number of times the decoders 
+failed to produce an error sequence that yields the syndrome.
 3. **average number of iterations** (separately for X and Z).
 
-Decoding failure occurs when the decoder returns an error sequence that does
-not match the corresponding syndrome.
 
 
 
