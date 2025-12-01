@@ -57,7 +57,7 @@ Evaluated performance indicators are the following:
 1. **quantum block (qBlock) error rate**. Ratio of quantum  block errors
 (decoder failures + logical errors). 
 2. **decoding failures** (separately for X and Z). Number of times the decoders 
-failed to produce an error sequence that yields the syndrome.
+failed to produce an error sequence that yields the given syndrome.
 3. **average number of iterations** (separately for X and Z).
 
 
@@ -112,7 +112,7 @@ The function simulator.simulate() takes the following input arguments:
 - decType: one of 'NG' (Naive Greedy), 'BF' (Bit Flipping), 'MS' (min-sum), 'BP' (belief propagation)
 - decIterations: maximum number of decoding iterations
 - decSchedule: one of 'F' (flooding), 'L' (layered), 'S' (serial)
-
+- OSDorder: order of OSD post-decoding. Set as -1 to disable OSD.
 
 
 Thanks for your interest in qLDPCsim!  
