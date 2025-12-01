@@ -37,13 +37,17 @@ Currently available decoding algorithms are:
 - the __Min-Sum__ (MS) algorithm with check node message normalization;
 - the __Bit-Flipping__ (BF) algorithm;
 - a naive greedy algorithm that flips valiables having largest number of 
-unsatisied checks.
+unsatisfied checks.
 
 BP and MS decoders may operate according to one of the following check-node update
 schedules:
-1. flooding;
-2. layered (automatic layer partitioning);
-3. serial.
+1. __flooding__: first update all check-to-variable messages, then update all
+varible-to-check messages;
+2. __layered__: check nodes are divided in layers; two check nodes can stay in 
+the same layer only if they do not have any adjacent variable nodes in common.
+Layered BP updates all check-to-variable messages in a layer, then updates 
+all the variable-to-check messages before proceeding with another layer.
+3. __serial__: same as layered, where each layer contains one check node.
 
 *[New in v0.2]* BP and MS decoders may perform an optional __Ordered
 Statistics Decoding__ (OSD) post-decoding step.
