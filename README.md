@@ -12,12 +12,12 @@ performing repeated encodings of $k$ logical qbits into $n$ physical qbits,
 simulating physical qbit depolarization, and decoding the depolarized qbits.
 
 Performance is evaluated by counting the following decoding events:  
-. __Successful decoding with perfect match__: the estimated error is equal to 
+- __Successful decoding with perfect match__: the estimated error is equal to 
 the true channel error;
-. __Successful decoding with degenerate error__: the difference between the
+- __Successful decoding with degenerate error__: the difference between the
 true channel error and the estimated error belongs to the stabilizer group;
-. __Decoder failure__: the estimated error yields a different syndrome;
-. __Logical error__: the difference between the true channel error and the
+- __Decoder failure__: the estimated error yields a different syndrome;
+- __Logical error__: the difference between the true channel error and the
 estimated error belongs to the normalizer group but is not a stabilizer.
 
 
