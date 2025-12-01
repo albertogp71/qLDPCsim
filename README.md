@@ -46,7 +46,7 @@ schedules:
 varible-to-check messages;
 2. __layered__: check nodes are partitioned into layers; two check nodes that 
 belong to the same layer do not have any adjacent variable nodes in common.
-Layered BP updates all check-to-variable messages in a layer, then updates 
+Layered BP or MS updates all check-to-variable messages in a layer, then updates 
 all the variable-to-check messages before processing another layer.
 3. __serial__: a variant of the layered schedule where each layer contains one 
 check node.
@@ -55,7 +55,7 @@ check node.
 Statistics Decoding__ (OSD) decoding step after BP or MS iterations.
 
 Evaluated performance indicators are the following:
-1. **quantum block (qBlock) error rate**. Ratio of quantum  block errors
+1. **qBlock error rate**. Ratio of quantum  block errors
 (decoder failures + logical errors). 
 2. **decoding failures count** (separately for X and Z). Number of times the decoders 
 failed to produce an error sequence that yields the given syndrome.
@@ -71,7 +71,7 @@ The source code is organized in modules:
 - **decoders**: qLDPC decoders.
 - **gf2math**: some useful GF(2) functions.
 
-Note that qLDPCsim is work in progress -- code stability is not guaranteed!
+__Note that qLDPCsim is work in progress -- code stability is not guaranteed!__
 
 
 
