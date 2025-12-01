@@ -6,17 +6,32 @@
 qLDPCsim is a simulation toolkit for quantum LDPC (CSS-type) error correction 
 codes aimed at performance evaluation by Monte Carlo simulations.
 
-Given a pair of parity-check matrices (PCM) ${\bf H}_X$ and ${\bf H}_Z$, qLDPCsim 
-creates a [Stim](https://github.com/quantumlib/Stim) circuit that consists of
-an ecoder, a depolarizing channel and a syndrome generator.
+Given a pair of parity-check matrices (PCM) ${\bf H}_X$ and ${\bf H}_Z$,
+qLDPCsim evaluates the true quantum block (qBlock) error rate (qBLER) by
+performing repeated encodings of $k$ logical qbits into $n$ physical qbits,
+simulating physical qbit depolarization, and decoding the depolarized qbits.
+
+Performance is evaluated by counting the following decoding events:
+. __Successful decoding with perfect match__: the estimated error is equal to 
+the true channel error;
+. __Successful decoding with degenerate error__: the difference between the
+true channel error and the estimated error belongs to the stabilizer group;
+. __Decoder failure__: the estimated error yields a different syndrome;
+. __Logical error__: the difference between the true channel error and the
+estimated error belongs to the normalizer group but is not a stabilizer.
+
+
+qLDPCsim generates a [Stim](https://github.com/quantumlib/Stim) circuit that 
+consists of an ecoder, a depolarizing channel and a syndrome generator.
 The Stim circuit
 - generates a sequence of $k$ random logical qubits;
 - encodes the logical qubits into $n$ physical qubits;
 - simulates depolarization on the $n$ physical qubits;
-- determines the bit-flip and phase-flip syndromes.
+- determines the bit-flip and phase-flip syndromes;
+- records the true X and Z errors introduced by the channel.
 
-The syndromes are fed to a quantum LDPC decoder so as to obtain corresponding
-error sequences.
+The syndromes are fed to a quantum LDPC decoder so as to obtain estimates of 
+corresponding error sequences.
 Currently available decoding algorithms are:
 - conventional __Belief-Propagation__ (BP), a.k.a. sum-product;
 - normalized __Min-Sum__ (MS);
@@ -29,9 +44,15 @@ schedules:
 2. layered (automatic layer partitioning);
 3. serial.
 
+__[New in v0.2]___ BP and MS decoders can be configured to perform an optional
+Ordered Statistics Decoding (OSD) post-decoding step.
+Currently, only order 0 OSD is implemented.
+
 Evaluated performance indicators are the following:
-1. **decoding failure rate** (separately for X and Z);
-2. **average number of iterations** (separately for X and Z).
+1. **quantum block (qBlock) error rate**. Ratio of uncorrected block errors. 
+2. **decoding failures** (separately for X and Z). Number of times the decoders
+failed to produce an error sequence 
+3. **average number of iterations** (separately for X and Z).
 
 Decoding failure occurs when the decoder returns an error sequence that does
 not match the corresponding syndrome.
@@ -92,3 +113,4 @@ The function simulator.simulate() takes the following input arguments:
 
 Thanks for your interest in qLDPCsim!  
 Alberto
+albertogp71.github@gmail.com

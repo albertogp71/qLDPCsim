@@ -136,6 +136,57 @@ def rank(A: np.ndarray) -> int:
 
 
 
+def REF(A: np.ndarray, 
+        reduced: bool = False) -> (np.ndarray, np.ndarray):
+    """
+    Convert matrix A to row-echelon form (REF).
+    See [https://en.wikipedia.org/wiki/Row_echelon_form].
+    
+    Parameters
+    ----------
+    A : np.ndarray
+        The matrix to be converted.
+    reduced : bool
+        Whether B is reduced echelon form.
+    
+    Returns
+    -------
+    B : np.ndarray
+        The row-echelon matrix.
+    T : np.ndarray
+        The transform matrix that yields B = (T@A)%2.
+
+    """
+
+    B = A.copy()
+    nR, nC = B.shape
+    T = np.identity(nR,dtype=np.int8)     # Transform matrix: B=TA
+    xRow = 0
+    for c in range(nC):
+        for r in range(xRow, nR):
+            if B[r,c] != 0:
+                break
+        if B[r,c] == 0:
+            continue
+        if r != xRow:
+            B[[xRow,r]] = B[[r,xRow]]
+            T[[xRow,r]] = T[[r,xRow]]
+        for s in range(r+1, nR):
+            if B[s,c] != 0:
+                B[s,:] = (B[s,:] + B[xRow,:]) % 2
+                T[s,:] = (T[s,:] + T[xRow,:]) % 2
+        if reduced:
+            for s in range(xRow):
+                if B[s,c] != 0:
+                    B[s,:] = (B[s,:] + B[xRow,:]) % 2
+                    T[s,:] = (T[s,:] + T[xRow,:]) % 2
+        xRow += 1
+        if xRow >= nR:
+            break
+            
+    return B, T
+
+
 
 def systematic_form(H):
     """

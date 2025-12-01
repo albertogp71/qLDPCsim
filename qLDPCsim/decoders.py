@@ -8,13 +8,17 @@ The decoders produce an estimated error vector.
 Iterative decoders also return the number of iterations.
 
 REFERENCES
-[1] https://doi.org/10.48550/arXiv.2205.02341
+[1] N. Raveendran, N. Rengaswamy, A. K. Pradhan, B. Vasić, "Soft Syndrome 
+    Decoding of Quantum LDPC Codes for Joint Correction of Data and Syndrome 
+    Errors", arXiv:2205.02341. DOI: 10.48550/arXiv.2205.02341.
 [2] David J. C. MacKay, Information Theory, Inference, and Learning Algorithms
 [3] Vasic et al., Collective Bit-Flipping...
+[4] P. Panteleev, G. Kalachev, "Degenerate Quantum LDPC Codes With Good Finite
+    Length Performance", Quantum 5, 585 (2021). DOI: 10.22331/q-2021-11-22-585.
 """
 
 import numpy as np
-
+from qLDPCsim import gf2math
 
 
 # ---------------------------------------------------------------------
@@ -101,10 +105,16 @@ def BF_decoder(H: np.ndarray, syndrome: np.ndarray, max_iter: int = 50) -> np.nd
 
 
 # ---------------------------------------------------------------------
-# Min-Sum (MS) decoder [1]
+# Min-Sum (MS) decoder [1] with optional OSD post-decoding [4]
 # ---------------------------------------------------------------------
-def MS_decoder(H: np.ndarray, syndrome: np.ndarray, p: float, max_iter: int = 99, \
-               layers: list = None, beta: float = 0.75, eps: float = 1e-9) -> np.ndarray:
+def MS_decoder(H: np.ndarray,           # Parity-check matrix
+               syndrome: np.ndarray,    # Syndrome
+               p: float,                # Error probability
+               max_iter: int = 99,      # Maximum number of iterations
+               layers: list = None,     # Partition of checks
+               beta: float = 0.75,      # Normalization factor
+               OSDorder: int = -1,      # Order of OSD post-decoder (-1 = disable)
+               eps: float = 1e-9) -> np.ndarray:
     """
     Normalized Min-Sum decoding for the binary LDPC code specified by the parity-check matrix H.
     The decoder operates according to a layered scheduling specified by the list of arrays
@@ -119,6 +129,7 @@ def MS_decoder(H: np.ndarray, syndrome: np.ndarray, p: float, max_iter: int = 99
         max_iter : maximum number of iterations.
         layers : partition of checks. Each array has indices of checks in same layer.
         beta : normalization factor.
+        OSDorder : order of OSD post-decoder (-1 = disable)
         eps : a factor to avoid division by zero.
     Returns:
         Estimated error vector.
@@ -159,11 +170,14 @@ def MS_decoder(H: np.ndarray, syndrome: np.ndarray, p: float, max_iter: int = 99
     
             # Variable node update
             VNsum = np.sum(msg_c2v, axis=0)
-            posterior = L_ch + VNsum
-            e_hat = (posterior < 0).astype(np.int8)
+            posteriorLLRs = L_ch + VNsum
+            e_hat = (posteriorLLRs < 0).astype(np.int8)
             if np.array_equal(syndrome, (H.dot(e_hat)) % 2):
                 return e_hat, (n_iter+1)
-            msg_v2c = np.where(H == 1, posterior - msg_c2v, 0.0)
+            msg_v2c = np.where(H == 1, posteriorLLRs - msg_c2v, 0.0)
+
+    if OSDorder >= 0:
+        e_hat = OSDdec(H, posteriorLLRs, OSDorder)
 
     return e_hat, max_iter
 
@@ -172,8 +186,13 @@ def MS_decoder(H: np.ndarray, syndrome: np.ndarray, p: float, max_iter: int = 99
 # ---------------------------------------------------------------------
 # Belief Propagation (BP) decoder [2]
 # ---------------------------------------------------------------------
-def BP_decoder(H: np.ndarray, syndrome: np.ndarray, p: float, max_iter: int = 99, \
-               layers: list = None, eps: float = 1e-9) -> np.ndarray:
+def BP_decoder(H: np.ndarray,               # Parity-check matrix
+               syndrome: np.ndarray,        # Syndrome
+               p: float,                    # Error probability
+               max_iter: int = 99,          # Maximum number of iterations
+               layers: list = None,         # Partition of checks
+               OSDorder: int = -1,          # Order of OSD post-decoder (-1 = disable)
+               eps: float = 1e-9) -> np.ndarray:
     """
     BP decoding for the binary LDPC code specified by the parity-check matrix H.
     The decoder operates according to a layered scheduling specified by the list of arrays
@@ -186,6 +205,7 @@ def BP_decoder(H: np.ndarray, syndrome: np.ndarray, p: float, max_iter: int = 99
         p : error probability
         max_iter : max number of iterations
         layers : partition of checks. Each array has indices of checks in same layer.
+        OSDorder : order of OSD post-decoder (-1 = disable)
         eps : a factor to avoid division by zero.
     Returns:
         Estimated error vector.
@@ -264,7 +284,64 @@ def BP_decoder(H: np.ndarray, syndrome: np.ndarray, p: float, max_iter: int = 99
             if np.all(syn_est == syndrome):
                 return e_hat, n_iter+1
 
+    if OSDorder >= 0:
+        e_hat = OSDdec(H, L_post, OSDorder)
+        
     return e_hat, max_iter
 
 
+# ---------------------------------------------------------------------
+# Ordered Statistics Decoding post-decoder [4]
+# ---------------------------------------------------------------------
+def OSDdec(H: np.ndarray,                   # Parity-check matrix
+           posteriorLLRs: np.ndarray,       # Posterior probability LLRs
+           order: int = 0                   # OSD order.
+           ) -> np.ndarray:
+    """
+    OSD post-decoding for the binary LDPC code specified by the parity-check
+    matrix H.
+
+    Args:
+        H : (m, n) binary matrix
+        posteriorLLRs: posterior probability LLRs
+        order : order of OSD post-decoder (-1 = disable)
+    Returns:
+        Estimated error vector.
+    """
+
+    # Determine reliabilities and order
+    posteriorLLRsat = np.where(np.abs(posteriorLLRs) < 100.0, 
+                               posteriorLLRs, 
+                               100.0 * np.sign(posteriorLLRs))
+    posteriorProb = 1. / (1. + np.exp(posteriorLLRsat))
+    reliability = np.where(posteriorProb > 0.5, posteriorProb, 1-posteriorProb)
+    perm = np.argsort(reliability)
+    Hp = H[:,perm]
+    
+    # Determine least reliable basis for the column space of H
+    complInfoSet = [0]              # Complementary information set
+    maxRank = gf2math.rank(Hp)
+    pastRank = gf2math.rank(Hp[:,complInfoSet])
+    nextIndex = 1
+    while True:
+        complInfoSet.append(nextIndex)
+        newRank = gf2math.rank(Hp[:,complInfoSet])
+        nextIndex += 1
+        if newRank <= pastRank:
+            complInfoSet.pop()
+            continue
+        if newRank >= maxRank:
+            break
+        pastRank = newRank
+    
+    infoSet = list(set(range(H.shape[1])) - set(complInfoSet))
+    e_hat_perm = e_hat[perm]
+    sI = Hp[:,infoSet] @ e_hat_perm[infoSet]
+    sJ = (syndrome + sI) % 2
+    
+    HpJE, T = gf2math.REF(Hp[:,complInfoSet], reduced=True)
+    
+    eJx = (T@sJ)%2
+    e_hat_perm[complInfoSet] = eJx[:len(complInfoSet)]
+    e_hat[perm] = e_hat_perm
 
