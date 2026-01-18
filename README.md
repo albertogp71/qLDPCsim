@@ -2,11 +2,21 @@
 
 ***
 
+[[Installation]](#installation) [[Usage]](#usage) [[Source code structure]](#source-code-structure)
+
+
 ## Description
 qLDPCsim is a simulation toolkit for quantum LDPC (CSS-type) error correction 
 codes aimed at performance evaluation by Monte Carlo simulations.
 
-Given a pair of parity-check matrices (PCM) ${\bf H}_X$ and ${\bf H}_Z$,
+A [[n,k]] quantum Low Density Parity Check (qLDPC) code is a mathematical 
+structure designed to craft a set of $k$ reliable logical qbits out of $n$
+unreliable physical qbits.
+The code is specified by pair of parity-check matrices (PCM) ${\bf H}_X$ and
+${\bf H}_Z$, both having $n$ columns, satisfying the constraint
+${\bf H}_X {\bf H}_Z^T = 0$, where superscript $(\cdot)^T$ denotes matrix
+transposition.
+
 qLDPCsim estimates the quantum block (qBlock) error rate (qBLER) by
 performing repeated encodings of $k$ randomly generated logical qbits into $n$
 physical qbits, simulating physical qbit depolarization, and decoding the
@@ -29,7 +39,7 @@ The Stim circuit
 - encodes the logical qubits into $n$ physical qubits;
 - simulates depolarization on the $n$ physical qubits;
 - determines the bit-flip and phase-flip syndromes;
-- records the true X and Z errors that the channel introduced.
+- records the true X and Z errors introduced by the channel.
 
 The syndromes are fed to a quantum LDPC decoder so as to obtain estimates of 
 corresponding error sequences.
@@ -52,7 +62,7 @@ all the variable-to-check messages before processing another layer.
 check node.
 
 *[New in v0.2]* BP and MS decoders may perform an optional __Ordered
-Statistics Decoding__ (OSD) decoding step after BP or MS iterations.
+Statistics Decoding__ (OSD) step after BP or MS iterations.
 
 Evaluated performance indicators are the following:
 1. **qBlock error rate**. Ratio of quantum  block errors
@@ -63,9 +73,8 @@ failed to produce an error sequence that yields the given syndrome.
 
 
 
-
 ## Source code structure
-The source code is organized in modules:
+The source code is organized in the following modules:
 - **simulator**: simulation execution and performance evaluation.
 - **PCMlibrary**: a library of parity check matrix pairs (Hx, Hz).
 - **decoders**: qLDPC decoders.

@@ -21,10 +21,13 @@ import numpy as np
 from qLDPCsim import gf2math
 
 
+
 # ---------------------------------------------------------------------
 # Simple naive greedy (NG) decoder
 # ---------------------------------------------------------------------
-def NG_decoder(H: np.ndarray, syndrome: np.ndarray) -> np.ndarray:
+def NG_decoder(H: np.ndarray,           # Parity-check matrix
+               syndrome: np.ndarray     # Syndrome
+               ) -> np.ndarray:
     """
     A very simple greedy decoder: repeatedly pick a variable node connected to 
     the currently nonzero syndrome with highest degree, flip that variable in 
@@ -68,10 +71,14 @@ def NG_decoder(H: np.ndarray, syndrome: np.ndarray) -> np.ndarray:
 
 
 
+
 # ---------------------------------------------------------------------
 # Bit-Flipping (BF) decoder [3]
 # ---------------------------------------------------------------------
-def BF_decoder(H: np.ndarray, syndrome: np.ndarray, max_iter: int = 50) -> np.ndarray:
+def BF_decoder(H: np.ndarray,           # Parity-check matrix
+               syndrome: np.ndarray,    # Syndrome
+               max_iter: int = 99       # Maximum number of iterations
+               ) -> np.ndarray:
     """
     Bit-flipping decoder.
 
@@ -100,6 +107,7 @@ def BF_decoder(H: np.ndarray, syndrome: np.ndarray, max_iter: int = 50) -> np.nd
             return e_hat, (n_iter+1)
 
     return e_hat, max_iter
+
 
 
 
