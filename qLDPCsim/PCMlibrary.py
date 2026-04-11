@@ -1,5 +1,5 @@
 """
-Copyright (c) 2025, Alberto G. Perotti
+Copyright (c) 2025-2026, Alberto G. Perotti
 All rights reserved.
 
 Library of Parity Check Matricx (PCM) pairs (Hx, Hz) of quantum CSS codes.

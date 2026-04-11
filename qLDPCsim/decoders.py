@@ -1,5 +1,5 @@
 """
-Copyright (c) 2025, Alberto G. Perotti
+Copyright (c) 2025-2026, Alberto G. Perotti
 All rights reserved.
 
 Decoders for quantum LDPC codes.
